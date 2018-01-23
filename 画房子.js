@@ -78,6 +78,7 @@ handler.setInputAction(function(movement){
 
     entities.add({
       name : 'Building',
+      description : "<button>Open Dialog</button>",
       polygon : {
         hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
         perPositionHeight : true,
