@@ -18,6 +18,10 @@ var start_pos = 0;
 var scene = viewer.scene;
 var handler;
 
+var solar_panel_width = 1;
+var solar_panel_length = 3;
+var width_offset = 0.2;
+
 
 handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
 
@@ -78,7 +82,7 @@ handler.setInputAction(function(movement){
 
     entities.add({
       name : 'Building',
-      description : "<button>Open Dialog</button>",
+      description : "<button onclick=\"myFunction()\">Click me</button>",
       polygon : {
         hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
         perPositionHeight : true,
@@ -92,3 +96,51 @@ handler.setInputAction(function(movement){
     vecList = [];
   }
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+function myFunction() {
+    console.log("hello");
+}
+
+
+var west = -117.845185;
+var east = -117.845115;
+var north = 33.646008;
+var south = 33.645948;
+
+var geodesic1 = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(west, north, 0), Cesium.Cartographic.fromDegrees(east, north, 0));
+var length = geodesic1.surfaceDistance;
+console.log(length);
+
+var geodesic2 = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(west, north, 0), Cesium.Cartographic.fromDegrees(west, south, 0));
+var width = geodesic2.surfaceDistance;
+console.log(width);
+
+var rows = parseInt(width / (solar_panel_width+width_offset),10);
+
+var north_sourth_diff = north - south;
+var step = north_sourth_diff/rows;
+var temp_north = north;
+
+for (var i = 0; i < rows; i++){
+
+    var temp_south = temp_north - (step*(solar_panel_width / (solar_panel_width+width_offset)));
+
+    viewer.entities.add({
+    rectangle : {
+        coordinates : Cesium.Rectangle.fromDegrees(west, temp_south, east, temp_north),
+        material : new Cesium.GridMaterialProperty({
+              color : Cesium.Color.BLUE,
+              cellAlpha : 0.4,
+              lineCount : new Cesium.Cartesian2(8, 1),
+              lineThickness : new Cesium.Cartesian2(2.0, 2.0)
+        })
+    }
+    });
+
+    temp_north = temp_south - (step*(width_offset / (solar_panel_width+width_offset)));
+
+}
+
+
+
+viewer.zoomTo(viewer.entities);
