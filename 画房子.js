@@ -18,9 +18,10 @@ var start_pos = 0;
 var scene = viewer.scene;
 var handler;
 
-var solar_panel_width = 1;
+var solar_panel_width = 3;
 var solar_panel_length = 3;
-var width_offset = 0.2;
+var width_offset = 0.5;
+var length_offset = 0.3;
 
 
 handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
@@ -102,10 +103,10 @@ function myFunction() {
 }
 
 
-var west = -117.845185;
-var east = -117.845115;
-var north = 33.646008;
-var south = 33.645948;
+var west = -117.845188;
+var east = -117.845039;
+var north = 33.645540;
+var south = 33.645324;
 
 var geodesic1 = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(west, north, 0), Cesium.Cartographic.fromDegrees(east, north, 0));
 var length = geodesic1.surfaceDistance;
@@ -116,28 +117,44 @@ var width = geodesic2.surfaceDistance;
 console.log(width);
 
 var rows = parseInt(width / (solar_panel_width+width_offset),10);
+var cols = parseInt(length / (solar_panel_length+length_offset),10);
+
 
 var north_sourth_diff = north - south;
-var step = north_sourth_diff/rows;
+var west_east_diff = east - west;
+
+var row_step = north_sourth_diff/rows;
+var col_step = west_east_diff/cols;
+
 var temp_north = north;
 
 for (var i = 0; i < rows; i++){
 
-    var temp_south = temp_north - (step*(solar_panel_width / (solar_panel_width+width_offset)));
+    var temp_west = west;
 
-    viewer.entities.add({
-    rectangle : {
-        coordinates : Cesium.Rectangle.fromDegrees(west, temp_south, east, temp_north),
-        material : new Cesium.GridMaterialProperty({
-              color : Cesium.Color.BLUE,
-              cellAlpha : 0.4,
-              lineCount : new Cesium.Cartesian2(8, 1),
-              lineThickness : new Cesium.Cartesian2(2.0, 2.0)
-        })
+    var temp_south = temp_north - (row_step*(solar_panel_width / (solar_panel_width+width_offset)));
+
+    for (var j = 0; j < cols; j++){
+        var temp_east = temp_west + (col_step*(solar_panel_length / (solar_panel_length+length_offset)));
+
+        viewer.entities.add({
+        rectangle : {
+            coordinates : Cesium.Rectangle.fromDegrees(temp_west, temp_south, temp_east, temp_north),
+            material : new Cesium.GridMaterialProperty({
+                color : Cesium.Color.BLUE,
+                cellAlpha : 0.4,
+                lineCount : new Cesium.Cartesian2(1, 1),
+                lineThickness : new Cesium.Cartesian2(2.0, 2.0)
+            })
+        }
+        });
+
+        temp_west = temp_east + (col_step*(length_offset / (solar_panel_length+length_offset)));
     }
-    });
 
-    temp_north = temp_south - (step*(width_offset / (solar_panel_width+width_offset)));
+
+
+    temp_north = temp_south - (row_step*(width_offset / (solar_panel_width+width_offset)));
 
 }
 
