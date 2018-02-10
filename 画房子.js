@@ -7,7 +7,7 @@ var solar_panel_width = 2;
 var solar_panel_length = 1;
 var width_offset = 0.3;
 var length_offset = 0.2;
-var top_down_offset = 1.5;
+var top_down_offset = 0.1;
 
 //房屋点sequence
 var building_points = [];
@@ -102,13 +102,17 @@ handler.setInputAction(function(movement){
         outline : true,
         outlineColor : Cesium.Color.BLACK,
         outlineWidth : 4,
-        material : Cesium.Color.fromRandom({alpha : 0.5})
+        material : new Cesium.ColorMaterialProperty({
+            color : Cesium.Color.GHOSTWHITE,
+            alpha : 0.7
+        })
       }
     });
     vecList = [];
   }
 
   draw_solar_panels(building_points, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
+  building_points = [];
 
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
@@ -151,6 +155,12 @@ function vertical_distance(point1,point2){
     var dist = deodist.surfaceDistance;
     return dist;
 }
+
+//list排序辅助
+ function Comparator(a, b) {
+   return (a[0] > b[0]);
+ }
+
 
 
 //在给定点范围内生成太阳能板
@@ -235,127 +245,106 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
         }
 
 
-        //北-过滤在外切矩形空间内的交点坐标 cor_in_range
-        //var cor_in_range_north = [];
-        //for(var x = 0; x < cor_north_list.length; x++){
-        //    if(cor_north_list[x][0] >= west && cor_north_list[x][0] <= east){
-        //        cor_in_range_north.push(cor_north_list[x]);
-        //    }
-        //}
+        cor_north_list.sort(Comparator);
 
-        //北-查找西交点 cor_north_left
-        var cor_north_left = cor_north_list[0];
-        for(var x = 0; x < cor_north_list.length; x++){
-            if(cor_north_list[x][0]< cor_north_left[0]){
-                cor_north_left = cor_north_list[x];
+        var temp_south;
+        for(var e = 0; e < cor_north_list.length; e+=2){
+
+            //北-查找西交点 cor_north_left
+            var cor_north_left = cor_north_list[e];
+
+            //北-查找东交点 cor_north_right
+            var cor_north_right = cor_north_list[e+1];
+
+
+            //南-计算所有外框与南线的交点坐标 cor_list
+            temp_south = temp_north - (north_south_diff*panel_width/actual_vertical_dist);
+
+            var temp_line_south = math_make_a_line(west, temp_south, east, temp_south);
+
+            //南-南线交点坐标
+            var cor_south_list = [];
+
+            for(l = 0; l < rooftop_lines.length; l ++){
+                var cor_south_line = lines_intersection_coordinates(temp_line_south, rooftop_lines[l]);
+                if(cor_south_line !== undefined){
+                    cor_south_list.push(cor_south_line);
+                }
             }
-        }
 
-        //北-查找东交点 cor_north_right
-        var cor_north_right = cor_north_list[0];
-        for(x = 0; x < cor_north_list.length; x++){
-            if(cor_north_list[x][0]> cor_north_left[0]){
-                cor_north_right = cor_north_list[x];
+            cor_south_list.sort(Comparator);
+
+            for(var f = 0; f < cor_south_list.length; f+=2){
+
+                //南-查找西交点 cor_north_left
+                var cor_south_left = cor_south_list[f];
+
+
+                //南-查找东交点 cor_north_right
+                var cor_south_right = cor_south_list[f+1];
+
+                if((cor_south_left[0] > cor_north_right[0]) || (cor_south_right[0] < cor_north_left[0])){
+                    continue;
+                }
+
+                else{
+
+                    //西-南北比较西侧最靠里的点
+                    var left_ref_point;
+                    var row_left;
+                    if(cor_north_left[0] > cor_south_left[0]){
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0],cor_north_left[1]);
+                        row_left = cor_north_left[0];
+                    }else{
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0],cor_south_left[1]);
+                        row_left = cor_south_left[0];
+                    }
+
+                    //东-南北比较东侧最靠里的点
+                    var right_ref_point;
+                    var row_right;
+                    if(cor_north_right[0] < cor_south_right[0]){
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0],cor_north_right[1]);
+                        row_right = cor_north_right[0];
+                    }else{
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0],cor_south_right[1]);
+                        row_right = cor_south_right[0];
+                    }
+
+                    //每一行最大东西距离
+                    var max_horizental_dist = horizental_distance(left_ref_point, right_ref_point);
+                    //每一行实际东西距离（扣除offset）
+                    var actual_horizental_dist = max_horizental_dist - 2*rooftop_offset;
+
+                    //检查该列空间是否够放板，够放几列板
+                    var col_check = actual_horizental_dist-panel_length;
+                    var cols = 0;
+                    if(col_check >= 0){
+                        cols = parseInt(col_check/(panel_length+length_offset),10)+1;
+                    }
+
+                    //每一行东西距离差
+                    var west_east_diff = row_right - row_left - 2*rooftop_offset/max_horizental_dist*(row_right - row_left);
+
+                    //临时最西面坐标
+                    var temp_west = row_left + ((rooftop_offset/max_horizental_dist)*(row_right-row_left));
+
+                    for(var j = 0; j < cols; j++){
+                        var temp_east = temp_west + (west_east_diff*panel_length/actual_horizental_dist);
+
+                        viewer.entities.add({
+                          polygon : {
+                            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([temp_west,temp_south,10,temp_east,temp_south,10,temp_east,temp_north,11,temp_west,temp_north,11])),
+                            perPositionHeight : true,
+                            outline : true,
+                            material : Cesium.Color.ROYALBLUE,
+                          }
+                        });
+
+                        temp_west = temp_east + (west_east_diff*length_offset/actual_horizental_dist);
+                    }
+                }
             }
-        }
-
-
-        //南-计算所有外框与南线的交点坐标 cor_list
-        var temp_south = temp_north - (north_south_diff*panel_width/actual_vertical_dist);
-
-        var temp_line_south = math_make_a_line(west, temp_south, west-10, temp_south);
-
-        //南-南线交点坐标
-        var cor_south_list = [];
-
-        for(l = 0; l < rooftop_lines.length; l ++){
-            var cor_south_line = lines_intersection_coordinates(temp_line_south, rooftop_lines[l]);
-            if(cor_south_line !== undefined){
-                cor_south_list.push(cor_south_line);
-            }
-        }
-
-        //南-过滤在外切矩形空间内的交点坐标 cor_in_range
-        //var cor_in_range_south = [];
-        //for(x = 0; x < cor_south_list.length; x++){
-        //    if(cor_south_list[x][0] >= west && cor_south_list[x][0] <= east){
-        //        cor_in_range_south.push(cor_south_list[x]);
-        //    }
-        //}
-
-        //南-查找西交点 cor_north_left
-        var cor_south_left = cor_south_list[0];
-        for(x = 0; x < cor_south_list.length; x++){
-            if(cor_south_list[x][0]< cor_south_left[0]){
-                cor_south_left = cor_south_list[x];
-            }
-        }
-
-        //南-查找东交点 cor_north_right
-        var cor_south_right = cor_south_list[0];
-        for(x = 0; x < cor_south_list.length; x++){
-            if(cor_south_list[x][0]> cor_south_left[0]){
-                cor_south_right = cor_south_list[x];
-            }
-        }
-
-
-        //西-南北比较西侧最靠里的点
-        var left_ref_point;
-        var row_left;
-        if(cor_north_left[0] > cor_south_left[0]){
-            left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0],cor_north_left[1]);
-            row_left = cor_north_left[0];
-        }else{
-            left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0],cor_south_left[1]);
-            row_left = cor_south_left[0];
-        }
-
-        //东-南北比较东侧最靠里的点
-        var right_ref_point;
-        var row_right;
-        if(cor_north_right[0] < cor_south_right[0]){
-            right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0],cor_north_right[1]);
-            row_right = cor_north_right[0];
-        }else{
-            right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0],cor_south_right[1]);
-            row_right = cor_south_right[0];
-        }
-
-        //每一行最大东西距离
-        var max_horizental_dist = horizental_distance(left_ref_point, right_ref_point);
-        //每一行实际东西距离（扣除offset）
-        var actual_horizental_dist = max_horizental_dist - 2*rooftop_offset;
-
-        //检查该列空间是否够放板，够放几列板
-        var col_check = actual_horizental_dist-panel_length;
-        var cols = 0;
-        if(col_check >= 0){
-            cols = parseInt(col_check/(panel_length+length_offset),10)+1;
-        }
-
-        //每一行东西距离差
-        var west_east_diff = row_right - row_left - 2*rooftop_offset/max_horizental_dist*(row_right - row_left);
-
-        //临时最西面坐标
-        var temp_west = row_left + ((rooftop_offset/max_horizental_dist)*(row_right-row_left));
-
-        for(var j = 0; j < cols; j++){
-            var temp_east = temp_west + (west_east_diff*panel_length/actual_horizental_dist);
-
-            viewer.entities.add({
-            rectangle : {
-                coordinates : Cesium.Rectangle.fromDegrees(temp_west, temp_south, temp_east, temp_north),
-                height: 10,
-                material : new Cesium.GridMaterialProperty({
-                    color : Cesium.Color.BLUE,
-                    cellAlpha : 0.4,
-                    lineCount : new Cesium.Cartesian2(1, 1),
-                    lineThickness : new Cesium.Cartesian2(2.0, 2.0)
-                })
-            }
-            });
-            temp_west = temp_east + (west_east_diff*length_offset/actual_horizental_dist);
         }
 
         temp_north = temp_south - (north_south_diff*width_offset/actual_vertical_dist);
@@ -364,25 +353,6 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
 
 
 }
-
-
-
-
-
-
-
-
-
-//测试点
-var point1 = Cesium.Cartesian3.fromDegrees(-117.845502,33.645999);
-var point2 = Cesium.Cartesian3.fromDegrees(-117.845627,33.645898);
-var point3 = Cesium.Cartesian3.fromDegrees(-117.845503,33.645769);
-var point4 = Cesium.Cartesian3.fromDegrees(-117.845365,33.645896);
-var test_lon_lat = [[-117.845502,33.645999],[-117.845627,33.645898],[-117.845503,33.645769],[-117.845365,33.645896]];
-
-//draw_solar_panels(test_lon_lat, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
-
-
 
 
 viewer.zoomTo(viewer.entities);
