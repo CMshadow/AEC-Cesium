@@ -6,7 +6,7 @@ Cesium.Math.setRandomNumberSeed(0);
 var solar_panel_width = 1.94;
 var solar_panel_length = 1;
 var width_offset = 0.3;
-var length_offset = 0;
+var length_offset = 0.1;
 var top_down_offset = 0;
 
 //房屋点sequence
@@ -157,6 +157,7 @@ function vertical_distance(point1,point2){
     return dist;
 }
 
+
 //list排序辅助
  function Comparator(a, b) {
    return (a[0] > b[0]);
@@ -180,8 +181,69 @@ function leave_setback(points_sequence, setback){
     }
 
     for(p = 0; p < rooftop_lines.length; p++){
-        console.log(rooftop_lines[p][0]);
+        var cut_line_a = (-1/rooftop_lines[p][0]);
+
+        var point_A = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][2][0],rooftop_lines[p][2][1]);
+        var point_B = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][3][0],rooftop_lines[p][3][1]);
+
+        var horizental_cor_A_B = Math.abs(rooftop_lines[p][3][0] - rooftop_lines[p][2][0]);
+        var vertical_cor_A_B = Math.abs(rooftop_lines[p][3][1] - rooftop_lines[p][2][1]);
+
+        var horizental_distance_A_B = horizental_distance(point_A, point_B);
+        var vertical_distance_A_B = vertical_distance(point_A, point_B);
+        var distance_A_B = Math.sqrt(Math.pow(horizental_distance_A_B, 2) + Math.pow(vertical_distance_A_B,2));
+
+        var ratio = setback/distance_A_B;
+
+        var ratio_horizental_cor_A_B = ratio * horizental_cor_A_B;
+        var ratio_vertical_cor_A_B = ratio * vertical_cor_A_B;
+
+        //var cut_line_b_A = rooftop_lines[p][2][1] - (cut_line_a * rooftop_lines[p][2][0]);
+        //var cut_line_b_B = rooftop_lines[p][3][1] - (cut_line_a * rooftop_lines[p][3][0]);
+        var cut_line_A_point1_lon;
+        var cut_line_A_point1_lat;
+        var cut_line_A_point2_lon;
+        var cut_line_A_point2_lat;
+        var cut_line_B_point1_lon;
+        var cut_line_B_point1_lat;
+        var cut_line_B_point2_lon;
+        var cut_line_B_point2_lat;
+
+        if(cut_line_a <= 0){
+            cut_line_A_point1_lon = rooftop_lines[p][2][0] + ratio_horizental_cor_A_B;
+            cut_line_A_point1_lat = rooftop_lines[p][2][1] - ratio_vertical_cor_A_B;
+            cut_line_B_point1_lon = rooftop_lines[p][3][0] + ratio_horizental_cor_A_B;
+            cut_line_B_point1_lat = rooftop_lines[p][3][1] - ratio_vertical_cor_A_B;
+
+            cut_line_A_point2_lon = rooftop_lines[p][2][0] - ratio_horizental_cor_A_B;
+            cut_line_A_point2_lat = rooftop_lines[p][2][1] + ratio_vertical_cor_A_B;
+            cut_line_B_point2_lon = rooftop_lines[p][3][0] - ratio_horizental_cor_A_B;
+            cut_line_B_point2_lat = rooftop_lines[p][3][1] + ratio_vertical_cor_A_B;
+        }else{
+            cut_line_A_point1_lon = rooftop_lines[p][2][0] + ratio_horizental_cor_A_B;
+            cut_line_A_point1_lat = rooftop_lines[p][2][1] + ratio_vertical_cor_A_B;
+            cut_line_B_point1_lon = rooftop_lines[p][3][0] + ratio_horizental_cor_A_B;
+            cut_line_B_point1_lat = rooftop_lines[p][3][1] + ratio_vertical_cor_A_B;
+
+            cut_line_A_point2_lon = rooftop_lines[p][2][0] - ratio_horizental_cor_A_B;
+            cut_line_A_point2_lat = rooftop_lines[p][2][1] - ratio_vertical_cor_A_B;
+            cut_line_B_point2_lon = rooftop_lines[p][3][0] - ratio_horizental_cor_A_B;
+            cut_line_B_point2_lat = rooftop_lines[p][3][1] - ratio_vertical_cor_A_B;
+        }
+
+        var parrallel_line1 = math_make_a_line(cut_line_A_point1_lon,cut_line_A_point1_lat,cut_line_B_point1_lon,cut_line_B_point1_lat);
+        var parrallel_line2 = math_make_a_line(cut_line_A_point2_lon,cut_line_A_point2_lat,cut_line_B_point2_lon,cut_line_B_point2_lat);
+        console.log(rooftop_lines[p][0])
+        console.log(parrallel_line1[0])
+        console.log(parrallel_line2[0])
+        console.log(rooftop_lines[p][1])
+        console.log(parrallel_line1[1])
+        console.log(parrallel_line2[1])
+        console.log('\n')
     }
+
+
+
 }
 
 
