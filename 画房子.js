@@ -3,11 +3,11 @@ Cesium.Math.setRandomNumberSeed(0);
 
 
 //太阳能板参数
-var solar_panel_width = 2;
+var solar_panel_width = 1.94;
 var solar_panel_length = 1;
 var width_offset = 0.3;
-var length_offset = 0.2;
-var top_down_offset = 0.1;
+var length_offset = 0;
+var top_down_offset = 0;
 
 //房屋点sequence
 var building_points = [];
@@ -111,6 +111,7 @@ handler.setInputAction(function(movement){
     vecList = [];
   }
 
+  leave_setback(building_points, 0);
   draw_solar_panels(building_points, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
   building_points = [];
 
@@ -161,6 +162,27 @@ function vertical_distance(point1,point2){
    return (a[0] > b[0]);
  }
 
+//根据setback将坐标缩小
+function leave_setback(points_sequence, setback){
+
+    //将点转换为数学公式
+    var rooftop_lines = [];
+
+    for(var p = 0; p < points_sequence.length; p++){
+        if(p !== (points_sequence.length - 1)){
+            var line1 = math_make_a_line(points_sequence[p][0],points_sequence[p][1],points_sequence[p+1][0],points_sequence[p+1][1]);
+            rooftop_lines.push(line1);
+        }
+        else{
+            var line2 = math_make_a_line(points_sequence[p][0],points_sequence[p][1],points_sequence[0][0],points_sequence[0][1]);
+            rooftop_lines.push(line2);
+        }
+    }
+
+    for(p = 0; p < rooftop_lines.length; p++){
+        console.log(rooftop_lines[p][0]);
+    }
+}
 
 
 //在给定点范围内生成太阳能板
@@ -211,7 +233,7 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
 
 
     // number of rows
-    var actual_vertical_dist = max_vertical_dist - 2*rooftop_offset;
+    var actual_vertical_dist = max_vertical_dist;
     var row_check = actual_vertical_dist-panel_width;
     var rows = 0;
     if(row_check >= 0){
@@ -219,10 +241,10 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
     }
 
     // 南北坐标差
-    var north_south_diff = north - south - 2*rooftop_offset/max_vertical_dist*(north - south);
+    var north_south_diff = north - south;
 
     //北端起点
-    var temp_north = north - ((rooftop_offset/max_vertical_dist)*(north-south));
+    var temp_north = north;
 
 
 
@@ -237,6 +259,7 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
         //北-北线交点坐标
         var cor_north_list = [];
 
+
         for(var l = 0; l < rooftop_lines.length; l ++){
             var cor_north_line = lines_intersection_coordinates(temp_line_north, rooftop_lines[l]);
             if(cor_north_line !== undefined){
@@ -247,7 +270,12 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
 
         cor_north_list.sort(Comparator);
 
-        var temp_south;
+        var temp_south = temp_north - (north_south_diff*panel_width/actual_vertical_dist);
+        if(cor_north_list.length === 1){
+            temp_north = temp_south - (north_south_diff*width_offset/actual_vertical_dist);
+            continue;
+        }
+
         for(var e = 0; e < cor_north_list.length; e+=2){
 
             //北-查找西交点 cor_north_left
@@ -283,6 +311,7 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
                 //南-查找东交点 cor_north_right
                 var cor_south_right = cor_south_list[f+1];
 
+
                 if((cor_south_left[0] > cor_north_right[0]) || (cor_south_right[0] < cor_north_left[0])){
                     continue;
                 }
@@ -314,7 +343,7 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
                     //每一行最大东西距离
                     var max_horizental_dist = horizental_distance(left_ref_point, right_ref_point);
                     //每一行实际东西距离（扣除offset）
-                    var actual_horizental_dist = max_horizental_dist - 2*rooftop_offset;
+                    var actual_horizental_dist = max_horizental_dist;
 
                     //检查该列空间是否够放板，够放几列板
                     var col_check = actual_horizental_dist-panel_length;
@@ -324,17 +353,17 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
                     }
 
                     //每一行东西距离差
-                    var west_east_diff = row_right - row_left - 2*rooftop_offset/max_horizental_dist*(row_right - row_left);
+                    var west_east_diff = row_right - row_left;
 
                     //临时最西面坐标
-                    var temp_west = row_left + ((rooftop_offset/max_horizental_dist)*(row_right-row_left));
+                    var temp_west = row_left;
 
                     for(var j = 0; j < cols; j++){
                         var temp_east = temp_west + (west_east_diff*panel_length/actual_horizental_dist);
 
                         viewer.entities.add({
                           polygon : {
-                            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([temp_west,temp_south,10,temp_east,temp_south,10,temp_east,temp_north,11,temp_west,temp_north,11])),
+                            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([temp_west,temp_south,10,temp_east,temp_south,10,temp_east,temp_north,10.5,temp_west,temp_north,10.5])),
                             perPositionHeight : true,
                             outline : true,
                             material : Cesium.Color.ROYALBLUE,
