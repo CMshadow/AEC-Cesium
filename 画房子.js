@@ -111,8 +111,34 @@ handler.setInputAction(function(movement){
     vecList = [];
   }
 
-  leave_setback(building_points, 0);
-  draw_solar_panels(building_points, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
+  var node_sequence = leave_setback(building_points, 1);
+
+  var test_sequence = [];
+    for(var m = 0; m < node_sequence.length; m++){
+        test_sequence.push(node_sequence[m][0]);
+        test_sequence.push(node_sequence[m][1]);
+        test_sequence.push(10);
+    }
+
+  //console.log(test_sequence)
+
+  entities.add({
+      name : 'Building',
+      description : "<button onclick=\"myFunction()\">Click me</button>",
+      polygon : {
+        hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(test_sequence)),
+        perPositionHeight : true,
+        extrudedHeight : 0.0,
+        outline : true,
+        outlineColor : Cesium.Color.BLUE,
+        outlineWidth : 8,
+        material : Cesium.Color.fromRandom({alpha: 0.8})
+      }
+    });
+
+  //console.log(node_sequence);
+  //console.log(building_points);
+  draw_solar_panels(node_sequence, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
   building_points = [];
 
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
@@ -132,6 +158,13 @@ function lines_intersection_coordinates(baseline,line2){
     if((x<line2[2][0] && x<line2[3][0]) || (x>line2[2][0] && x>line2[3][0]) || (y<line2[2][1] && y<line2[3][1]) || (y>line2[2][1] && y>line2[3][1])){
         return undefined;
     }
+    return [x,y];
+}
+
+//calculate the intersection coordinate of two lines for setback function
+function lines_intersection_coordinates_setback(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
     return [x,y];
 }
 
@@ -163,10 +196,30 @@ function vertical_distance(point1,point2){
    return (a[0] > b[0]);
  }
 
+ function generate_bounding_wnes(points_sequence){
+     //points_sequence中分类东西南北坐标
+     var lons = [];
+     var lats = [];
+     for (var i = 0; i < points_sequence.length; i++) {
+         lons.push(points_sequence[i][0]);
+         lats.push(points_sequence[i][1]);
+     }
+
+
+     //东南西北极值
+     var west = Math.min.apply(null,lons);
+     var east = Math.max.apply(null,lons);
+     var north = Math.max.apply(null,lats);
+     var south = Math.min.apply(null,lats);
+     return [west,east,north,south];
+ }
+
+
+
 //根据setback将坐标缩小
 function leave_setback(points_sequence, setback){
 
-    //将点转换为数学公式
+    //将点转换为数学线段公式
     var rooftop_lines = [];
 
     for(var p = 0; p < points_sequence.length; p++){
@@ -180,91 +233,135 @@ function leave_setback(points_sequence, setback){
         }
     }
 
+    //获得东西南北经纬度
+    var wnes = generate_bounding_wnes(points_sequence);
+    var west = wnes[0];
+    var east = wnes[1];
+    var north = wnes[2];
+    var south = wnes[3];
+
+    var cut_line_a;
+    var vector_x;
+    var vector_y;
+
+    var point_A;
+    var point_B;
+
+    var horizental_cor_A_B;
+    var vertical_cor_A_B;
+
+    var horizental_distance_A_B;
+    var vertical_distance_A_B;
+    var distance_A_B;
+
+    var ratio;
+    var ratio_horizental_cor_A_B;
+    var ratio_vertical_cor_A_B;
+
+    var cut_line_A_lat;
+    var cut_line_B_lat;
+    var cut_line_A_lon;
+    var cut_line_B_lon;
+
+    var parallel_line;
+
+    var start_index;
+    var sequence = Array.apply(null, new Array(rooftop_lines.length)).map(Number.prototype.valueOf,0);
+    var line_check = Array.apply(null, new Array(rooftop_lines.length)).map(Number.prototype.valueOf,0);
+
+
     for(p = 0; p < rooftop_lines.length; p++){
-        var cut_line_a = (-1/rooftop_lines[p][0]);
+        //从毗邻北点的线开始
 
-        var point_A = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][2][0],rooftop_lines[p][2][1]);
-        var point_B = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][3][0],rooftop_lines[p][3][1]);
+        //切线斜率
+        cut_line_a = (-1/rooftop_lines[p][0]);
 
-        var horizental_cor_A_B = Math.abs(rooftop_lines[p][3][0] - rooftop_lines[p][2][0]);
-        var vertical_cor_A_B = Math.abs(rooftop_lines[p][3][1] - rooftop_lines[p][2][1]);
+        //x、y轴向量
+        vector_x = rooftop_lines[p][3][0] - rooftop_lines[p][2][0];
+        vector_y = rooftop_lines[p][3][1] - rooftop_lines[p][2][1];
 
-        var horizental_distance_A_B = horizental_distance(point_A, point_B);
-        var vertical_distance_A_B = vertical_distance(point_A, point_B);
-        var distance_A_B = Math.sqrt(Math.pow(horizental_distance_A_B, 2) + Math.pow(vertical_distance_A_B,2));
+        //Cesium格式点A、B
+        point_A = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][2][0],rooftop_lines[p][2][1]);
+        point_B = Cesium.Cartesian3.fromDegrees(rooftop_lines[p][3][0],rooftop_lines[p][3][1]);
 
-        var ratio = setback/distance_A_B;
+        //水平垂直经度 纬度差绝对值
+        horizental_cor_A_B = Math.abs(rooftop_lines[p][3][0] - rooftop_lines[p][2][0]);
+        vertical_cor_A_B = Math.abs(rooftop_lines[p][3][1] - rooftop_lines[p][2][1]);
 
-        var ratio_horizental_cor_A_B = ratio * horizental_cor_A_B;
-        var ratio_vertical_cor_A_B = ratio * vertical_cor_A_B;
+        //计算两点间直线距离，单位米
+        horizental_distance_A_B = horizental_distance(point_A, point_B);
+        vertical_distance_A_B = vertical_distance(point_A, point_B);
+        distance_A_B = Math.sqrt(Math.pow(horizental_distance_A_B, 2) + Math.pow(vertical_distance_A_B,2));
 
-        //var cut_line_b_A = rooftop_lines[p][2][1] - (cut_line_a * rooftop_lines[p][2][0]);
-        //var cut_line_b_B = rooftop_lines[p][3][1] - (cut_line_a * rooftop_lines[p][3][0]);
-        var cut_line_A_point1_lon;
-        var cut_line_A_point1_lat;
-        var cut_line_A_point2_lon;
-        var cut_line_A_point2_lat;
-        var cut_line_B_point1_lon;
-        var cut_line_B_point1_lat;
-        var cut_line_B_point2_lon;
-        var cut_line_B_point2_lat;
+        //屋檐长度和直线距离比
+        ratio = setback/distance_A_B;
 
-        if(cut_line_a <= 0){
-            cut_line_A_point1_lon = rooftop_lines[p][2][0] + ratio_horizental_cor_A_B;
-            cut_line_A_point1_lat = rooftop_lines[p][2][1] - ratio_vertical_cor_A_B;
-            cut_line_B_point1_lon = rooftop_lines[p][3][0] + ratio_horizental_cor_A_B;
-            cut_line_B_point1_lat = rooftop_lines[p][3][1] - ratio_vertical_cor_A_B;
+        //水平垂直经度 纬度差取比值
+        ratio_horizental_cor_A_B = ratio * horizental_cor_A_B;
+        ratio_vertical_cor_A_B = ratio * vertical_cor_A_B;
+        console.log(Math.sqrt(Math.pow(ratio_horizental_cor_A_B, 2) + Math.pow(ratio_vertical_cor_A_B,2)))
 
-            cut_line_A_point2_lon = rooftop_lines[p][2][0] - ratio_horizental_cor_A_B;
-            cut_line_A_point2_lat = rooftop_lines[p][2][1] + ratio_vertical_cor_A_B;
-            cut_line_B_point2_lon = rooftop_lines[p][3][0] - ratio_horizental_cor_A_B;
-            cut_line_B_point2_lat = rooftop_lines[p][3][1] + ratio_vertical_cor_A_B;
+        //根据x轴向量决定纬度平移方向
+        if(vector_x < 0){
+            cut_line_A_lat = rooftop_lines[p][2][1] - ratio_vertical_cor_A_B;
+            cut_line_B_lat = rooftop_lines[p][3][1] - ratio_vertical_cor_A_B;
         }else{
-            cut_line_A_point1_lon = rooftop_lines[p][2][0] + ratio_horizental_cor_A_B;
-            cut_line_A_point1_lat = rooftop_lines[p][2][1] + ratio_vertical_cor_A_B;
-            cut_line_B_point1_lon = rooftop_lines[p][3][0] + ratio_horizental_cor_A_B;
-            cut_line_B_point1_lat = rooftop_lines[p][3][1] + ratio_vertical_cor_A_B;
-
-            cut_line_A_point2_lon = rooftop_lines[p][2][0] - ratio_horizental_cor_A_B;
-            cut_line_A_point2_lat = rooftop_lines[p][2][1] - ratio_vertical_cor_A_B;
-            cut_line_B_point2_lon = rooftop_lines[p][3][0] - ratio_horizental_cor_A_B;
-            cut_line_B_point2_lat = rooftop_lines[p][3][1] - ratio_vertical_cor_A_B;
+            cut_line_A_lat = rooftop_lines[p][2][1] + ratio_vertical_cor_A_B;
+            cut_line_B_lat = rooftop_lines[p][3][1] + ratio_vertical_cor_A_B;
         }
 
-        var parrallel_line1 = math_make_a_line(cut_line_A_point1_lon,cut_line_A_point1_lat,cut_line_B_point1_lon,cut_line_B_point1_lat);
-        var parrallel_line2 = math_make_a_line(cut_line_A_point2_lon,cut_line_A_point2_lat,cut_line_B_point2_lon,cut_line_B_point2_lat);
-        console.log(rooftop_lines[p][0])
-        console.log(parrallel_line1[0])
-        console.log(parrallel_line2[0])
-        console.log(rooftop_lines[p][1])
-        console.log(parrallel_line1[1])
-        console.log(parrallel_line2[1])
-        console.log('\n')
+        //根据y轴向量决定经度平移方向
+        if(vector_y < 0){
+            cut_line_A_lon = rooftop_lines[p][2][0] + ratio_horizental_cor_A_B;
+            cut_line_B_lon = rooftop_lines[p][3][0] + ratio_horizental_cor_A_B;
+        }else{
+            cut_line_A_lon = rooftop_lines[p][2][0] - ratio_horizental_cor_A_B;
+            cut_line_B_lon = rooftop_lines[p][3][0] - ratio_horizental_cor_A_B;
+        }
+
+        parallel_line = math_make_a_line(cut_line_A_lon, cut_line_A_lat, cut_line_B_lon, cut_line_B_lat);
+
+        sequence[p] = parallel_line;
+        line_check[p] = 1;
+        start_index = p;
+
     }
 
+    //console.log(line_check);
+    //console.log(sequence);
 
 
+
+
+    var node_sequence = [];
+    var inter;
+
+    for(p = 0; p < sequence.length; p++){
+        if(p !== (sequence.length - 1)){
+            inter = lines_intersection_coordinates_setback(sequence[p],sequence[p+1]);
+            node_sequence.push(inter);
+        }
+        else{
+            inter = lines_intersection_coordinates_setback(sequence[p],sequence[0]);
+            node_sequence.push(inter);
+        }
+    }
+
+    return node_sequence;
 }
+
+
 
 
 //在给定点范围内生成太阳能板
 function draw_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, rooftop_offset){
 
 
-    //points_sequence中分类东西南北坐标
-    var lons = [];
-    var lats = [];
-    for (i = 0; i < points_sequence.length; i++) {
-        lons.push(points_sequence[i][0]);
-        lats.push(points_sequence[i][1]);
-    }
-
-
-    //东南西北极值
-    var west = Math.min.apply(null,lons);
-    var east = Math.max.apply(null,lons);
-    var north = Math.max.apply(null,lats);
-    var south = Math.min.apply(null,lats);
+    var boundings = generate_bounding_wnes(points_sequence);
+    var west = boundings[0];
+    var east = boundings[1];
+    var north = boundings[2];
+    var south = boundings[3];
 
 
     //外围矩形点
