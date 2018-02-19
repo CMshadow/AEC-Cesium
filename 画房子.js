@@ -111,34 +111,36 @@ handler.setInputAction(function(movement){
     vecList = [];
   }
 
-  var node_sequence = leave_setback(building_points, 1);
 
-  var test_sequence = [];
-    for(var m = 0; m < node_sequence.length; m++){
-        test_sequence.push(node_sequence[m][0]);
-        test_sequence.push(node_sequence[m][1]);
-        test_sequence.push(10);
-    }
+  rotateaxis(building_points,30);
+  //var node_sequence = leave_setback(building_points, 1);
+
+  //var test_sequence = [];
+  //  for(var m = 0; m < node_sequence.length; m++){
+  //      test_sequence.push(node_sequence[m][0]);
+  //      test_sequence.push(node_sequence[m][1]);
+  //      test_sequence.push(10);
+  //  }
 
   //console.log(test_sequence)
 
-  entities.add({
-      name : 'Building',
-      description : "<button onclick=\"myFunction()\">Click me</button>",
-      polygon : {
-        hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(test_sequence)),
-        perPositionHeight : true,
-        extrudedHeight : 0.0,
-        outline : true,
-        outlineColor : Cesium.Color.BLUE,
-        outlineWidth : 8,
-        material : Cesium.Color.fromRandom({alpha: 0.8})
-      }
-    });
+  //entities.add({
+  //    name : 'Building',
+  //    description : "<button onclick=\"myFunction()\">Click me</button>",
+  //    polygon : {
+  //      hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(test_sequence)),
+  //      perPositionHeight : true,
+  //      extrudedHeight : 0.0,
+  //      outline : true,
+  //      outlineColor : Cesium.Color.BLUE,
+  //      outlineWidth : 8,
+  //      material : Cesium.Color.fromRandom({alpha: 0.8})
+  //    }
+  //  });
 
   //console.log(node_sequence);
   //console.log(building_points);
-  draw_solar_panels(node_sequence, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
+  //draw_solar_panels(node_sequence, solar_panel_width, solar_panel_length, width_offset, length_offset, top_down_offset);
   building_points = [];
 
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
@@ -540,6 +542,25 @@ function draw_solar_panels(points_sequence, panel_width, panel_length, width_off
 
 
 
+}
+
+
+
+//在旋转坐标系中的点位置
+function rotateaxis(points_sequence,angle){
+    var cos = Math.cos(angle * Math.PI / 180.0);
+    var sin = Math.sin(angle * Math.PI / 180.0);
+    var new_points_sequence = [];
+    var temp = [];
+    for(var i = 0; i < points_sequence.length; i ++){
+        var x = points_sequence[i][0];
+        var y = points_sequence[i][1];
+        temp.push(x*cos+y*sin);
+        temp.push(-x*sin+y*cos);
+        new_points_sequence.push(temp);
+        temp = [];
+    }
+    return new_points_sequence;
 }
 
 
