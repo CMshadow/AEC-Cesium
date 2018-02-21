@@ -58,7 +58,7 @@ handler.setInputAction(function(movement){
             //pickedObjects.id.point.color = Cesium.Color.RED;
         }
     }
-    
+
     if(existPointsList.length===2){
         var dict_key = Object.keys(connect_dict);
         if(dict_key.includes(String(existPointsList[0]))){
@@ -71,7 +71,7 @@ handler.setInputAction(function(movement){
     if((pointsList.toString().includes(String(existPointsList[0])))&&(pointsList.toString().includes(String(existPointsList[1])))){
       connect_dict[existPointsList[1]] = [];
       connect_dict[existPointsList[1]].push(existPointsList[0]);
-    }    
+    }
         //console.log(existPointsList);
         //console.log(connect_dict[existPointsList[0]]);
         var polylines = new Cesium.PolylineCollection();
@@ -87,8 +87,8 @@ handler.setInputAction(function(movement){
         });
         viewer.scene.primitives.add(polylines);
         existPointsList = [];
-    }                 
-    
+    }
+
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK, Cesium.KeyboardEventModifier.CTRL);
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +140,7 @@ handler.setInputAction(function(movement){
   var length = vecList.length;
   var dict_key = Object.keys(connect_dict);
   var dict_value = Object.values(connect_dict);
-  var vecDict = {};  
+  var vecDict = {};
   //console.log("key: " + dict_key);
   //console.log("value: "+ dict_value);
   for(;count<length;count++){
@@ -156,16 +156,16 @@ handler.setInputAction(function(movement){
   for(;count<length-1;count++){
     var path = [];
     var start_point = vecList[count];
-    //console.log(start_point); 
+    //console.log(start_point);
     var end_point = connect_dict[start_point][0];
-    //console.log(start_point); 
-    //console.log(typeof end_point); 
+    //console.log(start_point);
+    //console.log(typeof end_point);
     var adjacentPointList = [];
     if(count === 0){
         adjacentPointList.push(vecList[count+1]);
         adjacentPointList.push(vecList[length-1]);
     }
-    
+
     else{
         adjacentPointList.push(vecList[count-1]);
         adjacentPointList.push(vecList[count+1]);
@@ -183,7 +183,7 @@ handler.setInputAction(function(movement){
                     nextPoints = nextPoints[y];
                     break;
                }
-               
+
            }
        }
        path.push(end_point);
@@ -197,7 +197,7 @@ handler.setInputAction(function(movement){
             if(pointsList.toString().includes(String(path[k]))){
                 tempRoof.push(temp_height+5);
                 innerPoint.push(path[k]);
-                
+
             }
             else{
                 tempRoof.push(temp_height);
@@ -218,7 +218,7 @@ handler.setInputAction(function(movement){
           }
         });
         path = [];
-/////////////////////////构建solar panel//////////////////////////////////////// 
+/////////////////////////构建solar panel////////////////////////////////////////
 ///baseLine = [斜率，偏移，【一点坐标】，【二点坐标]】
         var baseLine = math_make_a_line(outsidePoint[0].x,outsidePoint[0].y,outsidePoint[1].x,outsidePoint[1].y);
         var tan;
@@ -252,19 +252,19 @@ handler.setInputAction(function(movement){
             outsidePoint[n][1] = -tempXOUT*sin+tempYOUT*cos;
             //console.log(tempX);
             //console.log(tempY);
-        }  
-    }   
+        }
+    }
     //break;
   }
 
-//////////////////////////////////////////////////////////////////////    
+//////////////////////////////////////////////////////////////////////
   if(vecList.length !== 0){
     var tempList = [];
     vecList.forEach(function(element){
       tempList.push(element.x);
       tempList.push(element.y);
       tempList.push(temp_height);
-      
+
       var point = viewer.entities.add({
         position : new Cesium.CallbackProperty(function() {
           return Cesium.Cartesian3.fromDegrees(element.x,element.y,temp_height);
@@ -273,8 +273,8 @@ handler.setInputAction(function(movement){
           pixelSize : 15,
           color : Cesium.Color.YELLOW
         }
-    });  
-        
+    });
+
   });
     entities.add({
       name : 'Building',
@@ -288,11 +288,11 @@ handler.setInputAction(function(movement){
         material : Cesium.Color.fromRandom({alpha : 0.5})
       }
     });
-    vecList = [];   
-      
-  } 
-  connect_dict= {};  
-  
+    vecList = [];
+
+  }
+  connect_dict= {};
+
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
 function almostEqual(num1,num2){
@@ -304,8 +304,8 @@ function convertStringtoPosition(t){
     items.forEach(function(val, index, array) {
        array[index] = val.split(",").map(Number);
     });
-    var position = [parseFloat(items[0][0]),parseFloat(items[0][1])];                       
-    return position;  
+    var position = [parseFloat(items[0][0]),parseFloat(items[0][1])];
+    return position;
 }
 
 //given the coordinates of a starting point and a ending point, generate the mathematical equation
@@ -314,7 +314,7 @@ function math_make_a_line(x1,y1,x2,y2){
     var line_b = (y1-(line_a*x1));
     return [line_a,line_b,[x1,y1],[x2,y2]];
 }
-function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, width_offset, length_offset, angle){
+function roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos){
     var result = [];
 
     var boundings = generate_bounding_wnes(points_sequence);
@@ -324,14 +324,14 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
     var south = boundings[3];
 
 
-    var cos = Math.cos(angle * Math.PI / 180.0);
-    var sin = Math.sin(angle * Math.PI / 180.0);
+    var new_cos = cos;
+    var new_sin = -sin;
 
     //外围矩形点
-    var outer_top_left = Cesium.Cartesian3.fromDegrees(west*cos+north*sin,-west*sin+north*cos);
-    var outer_bot_left = Cesium.Cartesian3.fromDegrees(west*cos+south*sin,-west*sin+south*cos);
-    var outer_top_right = Cesium.Cartesian3.fromDegrees(east*cos+north*sin,-east*sin+north*cos);
-    var outer_bot_right = Cesium.Cartesian3.fromDegrees(east*cos+south*sin,-east*sin+south*cos);
+    var outer_top_left = Cesium.Cartesian3.fromDegrees(west*new_cos+north*new_sin,-west*new_sin+north*new_cos);
+    var outer_bot_left = Cesium.Cartesian3.fromDegrees(west*new_cos+south*new_sin,-west*new_sin+south*new_cos);
+    var outer_top_right = Cesium.Cartesian3.fromDegrees(east*new_cos+north*new_sin,-east*new_sin+north*new_cos);
+    var outer_bot_right = Cesium.Cartesian3.fromDegrees(east*new_cos+south*new_sin,-east*new_sin+south*new_cos);
 
 
 
@@ -446,10 +446,10 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
                     var left_ref_point;
                     var row_left;
                     if(cor_north_left[0] > cor_south_left[0]){
-                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0]*cos+cor_north_left[1]*sin,-cor_north_left[0]*sin+cor_north_left[1]*cos);
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0]*new_cos+cor_north_left[1]*new_sin,-cor_north_left[0]*new_sin+cor_north_left[1]*new_cos);
                         row_left = cor_north_left[0];
                     }else{
-                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0]*cos+cor_south_left[1]*sin,-cor_south_left[0]*sin+cor_south_left[1]*cos);
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0]*new_cos+cor_south_left[1]*new_sin,-cor_south_left[0]*new_sin+cor_south_left[1]*new_cos);
                         row_left = cor_south_left[0];
                     }
 
@@ -457,10 +457,10 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
                     var right_ref_point;
                     var row_right;
                     if(cor_north_right[0] < cor_south_right[0]){
-                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0]*cos+cor_north_right[1]*sin,-cor_north_right[0]*sin+cor_north_right[1]*cos);
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0]*new_cos+cor_north_right[1]*new_sin,-cor_north_right[0]*new_sin+cor_north_right[1]*new_cos);
                         row_right = cor_north_right[0];
                     }else{
-                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0]*cos+cor_south_right[1]*sin,-cor_south_right[0]*sin+cor_south_right[1]*cos);
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0]*new_cos+cor_south_right[1]*new_sin,-cor_south_right[0]*new_sin+cor_south_right[1]*new_cos);
                         row_right = cor_south_right[0];
                     }
 
