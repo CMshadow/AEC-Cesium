@@ -58,7 +58,7 @@ handler.setInputAction(function(movement){
             //pickedObjects.id.point.color = Cesium.Color.RED;
         }
     }
-    
+
     if(existPointsList.length===2){
         var dict_key = Object.keys(connect_dict);
         if(dict_key.includes(String(existPointsList[0]))){
@@ -71,7 +71,7 @@ handler.setInputAction(function(movement){
     if((pointsList.toString().includes(String(existPointsList[0])))&&(pointsList.toString().includes(String(existPointsList[1])))){
       connect_dict[existPointsList[1]] = [];
       connect_dict[existPointsList[1]].push(existPointsList[0]);
-    }    
+    }
         //console.log(existPointsList);
         //console.log(connect_dict[existPointsList[0]]);
         var polylines = new Cesium.PolylineCollection();
@@ -87,8 +87,8 @@ handler.setInputAction(function(movement){
         });
         viewer.scene.primitives.add(polylines);
         existPointsList = [];
-    }                 
-    
+    }
+
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK, Cesium.KeyboardEventModifier.CTRL);
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +140,7 @@ handler.setInputAction(function(movement){
   var length = vecList.length;
   var dict_key = Object.keys(connect_dict);
   var dict_value = Object.values(connect_dict);
-  var vecDict = {};  
+  var vecDict = {};
   //console.log("key: " + dict_key);
   //console.log("value: "+ dict_value);
   for(;count<length;count++){
@@ -156,16 +156,16 @@ handler.setInputAction(function(movement){
   for(;count<length-1;count++){
     var path = [];
     var start_point = vecList[count];
-    //console.log(start_point); 
+    //console.log(start_point);
     var end_point = connect_dict[start_point][0];
-    //console.log(start_point); 
-    //console.log(typeof end_point); 
+    //console.log(start_point);
+    //console.log(typeof end_point);
     var adjacentPointList = [];
     if(count === 0){
         adjacentPointList.push(vecList[count+1]);
         adjacentPointList.push(vecList[length-1]);
     }
-    
+
     else{
         adjacentPointList.push(vecList[count-1]);
         adjacentPointList.push(vecList[count+1]);
@@ -183,7 +183,7 @@ handler.setInputAction(function(movement){
                     nextPoints = nextPoints[y];
                     break;
                }
-               
+
            }
        }
        path.push(end_point);
@@ -197,7 +197,7 @@ handler.setInputAction(function(movement){
             if(pointsList.toString().includes(String(path[k]))){
                 tempRoof.push(temp_height+5);
                 innerPoint.push(path[k]);
-                
+
             }
             else{
                 tempRoof.push(temp_height);
@@ -217,10 +217,11 @@ handler.setInputAction(function(movement){
             material : Cesium.Color.fromAlpha(Cesium.Color.WHITE, 0.5)
           }
         });
-        path = [];
-/////////////////////////构建solar panel//////////////////////////////////////// 
+        
+/////////////////////////构建solar panel////////////////////////////////////////
 ///baseLine = [斜率，偏移，【一点坐标】，【二点坐标]】
         var baseLine = math_make_a_line(outsidePoint[0].x,outsidePoint[0].y,outsidePoint[1].x,outsidePoint[1].y);
+        console.log("bl"+baseLine)
         var tan;
         var cos;
         var sin;
@@ -234,37 +235,47 @@ handler.setInputAction(function(movement){
             cos = Math.sqrt(1/(tan*tan+1));
             sin = -Math.sqrt(1-cos*cos);
         }
-        console.log("sin: "+sin);
-        console.log("cos: "+cos);
-        console.log("BL:"+baseLine);
         for(var n = 0;n<innerPoint.length;n++){
             var tempXIN = innerPoint[n].x;
             var tempYIN = innerPoint[n].y;
             innerPoint[n][0] = tempXIN*cos+tempYIN*sin;
             innerPoint[n][1] = -tempXIN*sin+tempYIN*cos;
-            //console.log(tempX);
-            //console.log(tempY);
         }
         for(n = 0;n<outsidePoint.length;n++){
             var tempXOUT = outsidePoint[n].x;
             var tempYOUT = outsidePoint[n].y;
             outsidePoint[n][0] = tempXOUT*cos+tempYOUT*sin;
             outsidePoint[n][1] = -tempXOUT*sin+tempYOUT*cos;
-            //console.log(tempX);
-            //console.log(tempY);
-        }  
-    }   
+        }
+        var points_sequence = [];
+        for(n = 0;n<path.length;n++){
+            points_sequence[n] = [];
+            points_sequence[n].push(path[n].x);
+            points_sequence[n].push(path[n].y);
+        }
+        //console.log("path "+path);
+        //console.log("ps "+points_sequence);
+        var panel_width = 1.94;
+        var panel_length = 1;
+        var width_offset = 0.3;
+        var length_offset = 0.2; 
+        var panel_cors = roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos);
+        var new_panel_cors = roof_panel_cors_rotate_back(panel_cors, sin, cos);
+        //console.log(panel_cors);
+        draw_ratoate_solar_panels(new_panel_cors);
+        path = [];
+    }
     //break;
   }
 
-//////////////////////////////////////////////////////////////////////    
+//////////////////////////////////////////////////////////////////////
   if(vecList.length !== 0){
     var tempList = [];
     vecList.forEach(function(element){
       tempList.push(element.x);
       tempList.push(element.y);
       tempList.push(temp_height);
-      
+
       var point = viewer.entities.add({
         position : new Cesium.CallbackProperty(function() {
           return Cesium.Cartesian3.fromDegrees(element.x,element.y,temp_height);
@@ -273,8 +284,8 @@ handler.setInputAction(function(movement){
           pixelSize : 15,
           color : Cesium.Color.YELLOW
         }
-    });  
-        
+    });
+
   });
     entities.add({
       name : 'Building',
@@ -288,11 +299,11 @@ handler.setInputAction(function(movement){
         material : Cesium.Color.fromRandom({alpha : 0.5})
       }
     });
-    vecList = [];   
-      
-  } 
-  connect_dict= {};  
-  
+    vecList = [];
+
+  }
+  connect_dict= {};
+
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
 function almostEqual(num1,num2){
@@ -304,8 +315,8 @@ function convertStringtoPosition(t){
     items.forEach(function(val, index, array) {
        array[index] = val.split(",").map(Number);
     });
-    var position = [parseFloat(items[0][0]),parseFloat(items[0][1])];                       
-    return position;  
+    var position = [parseFloat(items[0][0]),parseFloat(items[0][1])];
+    return position;
 }
 
 //given the coordinates of a starting point and a ending point, generate the mathematical equation
@@ -314,7 +325,11 @@ function math_make_a_line(x1,y1,x2,y2){
     var line_b = (y1-(line_a*x1));
     return [line_a,line_b,[x1,y1],[x2,y2]];
 }
-function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, width_offset, length_offset, angle){
+
+
+
+
+function roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos){
     var result = [];
 
     var boundings = generate_bounding_wnes(points_sequence);
@@ -324,14 +339,14 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
     var south = boundings[3];
 
 
-    var cos = Math.cos(angle * Math.PI / 180.0);
-    var sin = Math.sin(angle * Math.PI / 180.0);
+    var new_cos = cos;
+    var new_sin = -sin;
 
     //外围矩形点
-    var outer_top_left = Cesium.Cartesian3.fromDegrees(west*cos+north*sin,-west*sin+north*cos);
-    var outer_bot_left = Cesium.Cartesian3.fromDegrees(west*cos+south*sin,-west*sin+south*cos);
-    var outer_top_right = Cesium.Cartesian3.fromDegrees(east*cos+north*sin,-east*sin+north*cos);
-    var outer_bot_right = Cesium.Cartesian3.fromDegrees(east*cos+south*sin,-east*sin+south*cos);
+    var outer_top_left = Cesium.Cartesian3.fromDegrees(west*new_cos+north*new_sin,-west*new_sin+north*new_cos);
+    var outer_bot_left = Cesium.Cartesian3.fromDegrees(west*new_cos+south*new_sin,-west*new_sin+south*new_cos);
+    var outer_top_right = Cesium.Cartesian3.fromDegrees(east*new_cos+north*new_sin,-east*new_sin+north*new_cos);
+    var outer_bot_right = Cesium.Cartesian3.fromDegrees(east*new_cos+south*new_sin,-east*new_sin+south*new_cos);
 
 
 
@@ -446,10 +461,10 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
                     var left_ref_point;
                     var row_left;
                     if(cor_north_left[0] > cor_south_left[0]){
-                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0]*cos+cor_north_left[1]*sin,-cor_north_left[0]*sin+cor_north_left[1]*cos);
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_left[0]*new_cos+cor_north_left[1]*new_sin,-cor_north_left[0]*new_sin+cor_north_left[1]*new_cos);
                         row_left = cor_north_left[0];
                     }else{
-                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0]*cos+cor_south_left[1]*sin,-cor_south_left[0]*sin+cor_south_left[1]*cos);
+                        left_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_left[0]*new_cos+cor_south_left[1]*new_sin,-cor_south_left[0]*new_sin+cor_south_left[1]*new_cos);
                         row_left = cor_south_left[0];
                     }
 
@@ -457,10 +472,10 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
                     var right_ref_point;
                     var row_right;
                     if(cor_north_right[0] < cor_south_right[0]){
-                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0]*cos+cor_north_right[1]*sin,-cor_north_right[0]*sin+cor_north_right[1]*cos);
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_north_right[0]*new_cos+cor_north_right[1]*new_sin,-cor_north_right[0]*new_sin+cor_north_right[1]*new_cos);
                         row_right = cor_north_right[0];
                     }else{
-                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0]*cos+cor_south_right[1]*sin,-cor_south_right[0]*sin+cor_south_right[1]*cos);
+                        right_ref_point = Cesium.Cartesian3.fromDegrees(cor_south_right[0]*new_cos+cor_south_right[1]*new_sin,-cor_south_right[0]*new_sin+cor_south_right[1]*new_cos);
                         row_right = cor_south_right[0];
                     }
 
@@ -509,6 +524,106 @@ function rotate_solar_panels_cors(points_sequence, panel_width, panel_length, wi
         }
         temp_north = temp_south - (north_south_diff*width_offset/actual_vertical_dist);
     }
-    console.log(result.length)
+    //console.log(result.length)
     return result;
+}
+
+
+//calculate the intersection coordinate of two lines in mathematical equations
+function lines_intersection_coordinates(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
+    if((x<line2[2][0] && x<line2[3][0]) || (x>line2[2][0] && x>line2[3][0]) || (y<line2[2][1] && y<line2[3][1]) || (y>line2[2][1] && y>line2[3][1])){
+        return undefined;
+    }
+    return [x,y];
+}
+
+//calculate the intersection coordinate of two lines for setback function
+function lines_intersection_coordinates_setback(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
+    return [x,y];
+}
+
+//calculate the horizental distnce in meters between two Cartesian3 points
+function horizental_distance(point1,point2){
+    var p1_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).longitude);
+    var p1_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).latitude);
+    var p2_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point2).longitude);
+
+    var deodist = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(p1_weidu, p1_jingdu),Cesium.Cartographic.fromDegrees(p2_weidu, p1_jingdu));
+    var dist = deodist.surfaceDistance;
+    return dist;
+}
+
+//calculate the vertical distnce in meters between two Cartesian3 points
+function vertical_distance(point1,point2){
+    var p1_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).longitude);
+    var p1_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).latitude);
+    var p2_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point2).latitude);
+
+    var deodist = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(p1_weidu, p1_jingdu),Cesium.Cartographic.fromDegrees(p1_weidu, p2_jingdu));
+    var dist = deodist.surfaceDistance;
+    return dist;
+}
+
+
+//list排序辅助
+ function Comparator(a, b) {
+   return (a[0] > b[0]);
+ }
+
+ function generate_bounding_wnes(points_sequence){
+     //points_sequence中分类东西南北坐标
+     var lons = [];
+     var lats = [];
+     for (var i = 0; i < points_sequence.length; i++) {
+         lons.push(points_sequence[i][0]);
+         lats.push(points_sequence[i][1]);
+     }
+
+
+     //东南西北极值
+     var west = Math.min.apply(null,lons);
+     var east = Math.max.apply(null,lons);
+     var north = Math.max.apply(null,lats);
+     var south = Math.min.apply(null,lats);
+     return [west,east,north,south];
+ }
+
+function roof_panel_cors_rotate_back(solar_panels_sequence,sin, cos){
+    var new_cos = cos;
+    var new_sin = -sin;
+    var new_solar_panels_sequence = [];
+    var temp = [];
+    for(var i = 0; i < solar_panels_sequence.length; i ++){
+
+        for(var j = 0; j < solar_panels_sequence[i].length; j+=3){
+            var x = solar_panels_sequence[i][j];
+            var y = solar_panels_sequence[i][j+1];
+            temp.push(x*new_cos+y*new_sin);
+            temp.push(-x*new_sin+y*new_cos);
+            temp.push(solar_panels_sequence[i][j+2]);
+        }
+        new_solar_panels_sequence.push(temp);
+        temp = [];
+    }
+    console.log(new_solar_panels_sequence.length)
+    return new_solar_panels_sequence;
+}
+
+// 画旋转太阳能板
+function draw_ratoate_solar_panels(solar_panels_sequence){
+    for(var i = 0; i < solar_panels_sequence.length; i++){
+        //console.log(solar_panels_sequence[i])
+        viewer.entities.add({
+          polygon : {
+            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(solar_panels_sequence[i])),
+            perPositionHeight : true,
+            outline : true,
+            material : Cesium.Color.ROYALBLUE,
+          }
+        });
+    }
 }
