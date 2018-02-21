@@ -253,6 +253,20 @@ handler.setInputAction(function(movement){
             //console.log(tempX);
             //console.log(tempY);
         }
+        var points_sequence = [];
+        for(n = 0;n<path.length;n++){
+            points_sequence[n] = [];
+            points_sequence[n].push(path[n].x);
+            points_sequence[n].push(path[n].y);
+        }
+        var panel_width = 1.94;
+        var panel_length = 1;
+        var width_offset = 0.3;
+        var length_offset = 0.2; 
+        var panel_cors = roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos);
+        var new_panel_cors = roof_panel_cors_rotate_back(panel_cors, sin, cos);
+        draw_ratoate_solar_panels(new_panel_cors);
+        
     }
     //break;
   }
@@ -509,6 +523,106 @@ function roof_solar_panels(points_sequence, panel_width, panel_length, width_off
         }
         temp_north = temp_south - (north_south_diff*width_offset/actual_vertical_dist);
     }
-    console.log(result.length)
+    //console.log(result.length)
     return result;
+}
+
+
+//calculate the intersection coordinate of two lines in mathematical equations
+function lines_intersection_coordinates(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
+    if((x<line2[2][0] && x<line2[3][0]) || (x>line2[2][0] && x>line2[3][0]) || (y<line2[2][1] && y<line2[3][1]) || (y>line2[2][1] && y>line2[3][1])){
+        return undefined;
+    }
+    return [x,y];
+}
+
+//calculate the intersection coordinate of two lines for setback function
+function lines_intersection_coordinates_setback(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
+    return [x,y];
+}
+
+//calculate the horizental distnce in meters between two Cartesian3 points
+function horizental_distance(point1,point2){
+    var p1_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).longitude);
+    var p1_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).latitude);
+    var p2_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point2).longitude);
+
+    var deodist = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(p1_weidu, p1_jingdu),Cesium.Cartographic.fromDegrees(p2_weidu, p1_jingdu));
+    var dist = deodist.surfaceDistance;
+    return dist;
+}
+
+//calculate the vertical distnce in meters between two Cartesian3 points
+function vertical_distance(point1,point2){
+    var p1_weidu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).longitude);
+    var p1_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point1).latitude);
+    var p2_jingdu = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(point2).latitude);
+
+    var deodist = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(p1_weidu, p1_jingdu),Cesium.Cartographic.fromDegrees(p1_weidu, p2_jingdu));
+    var dist = deodist.surfaceDistance;
+    return dist;
+}
+
+
+//list排序辅助
+ function Comparator(a, b) {
+   return (a[0] > b[0]);
+ }
+
+ function generate_bounding_wnes(points_sequence){
+     //points_sequence中分类东西南北坐标
+     var lons = [];
+     var lats = [];
+     for (var i = 0; i < points_sequence.length; i++) {
+         lons.push(points_sequence[i][0]);
+         lats.push(points_sequence[i][1]);
+     }
+
+
+     //东南西北极值
+     var west = Math.min.apply(null,lons);
+     var east = Math.max.apply(null,lons);
+     var north = Math.max.apply(null,lats);
+     var south = Math.min.apply(null,lats);
+     return [west,east,north,south];
+ }
+
+function roof_panel_cors_rotate_back(solar_panels_sequence,sin, cos){
+    var new_cos = cos;
+    var new_sin = -sin;
+    var new_solar_panels_sequence = [];
+    var temp = [];
+    for(var i = 0; i < solar_panels_sequence.length; i ++){
+
+        for(var j = 0; j < solar_panels_sequence[i].length; j+=3){
+            var x = solar_panels_sequence[i][j];
+            var y = solar_panels_sequence[i][j+1];
+            temp.push(x*new_cos+y*new_sin);
+            temp.push(-x*new_sin+y*new_cos);
+            //temp.push(solar_panels_sequence[i][j+2]);
+        }
+        new_solar_panels_sequence.push(temp);
+        temp = [];
+    }
+    //console.log(new_solar_panels_sequence.length)
+    return new_solar_panels_sequence;
+}
+
+// 画旋转太阳能板
+function draw_ratoate_solar_panels(solar_panels_sequence){
+    for(var i = 0; i < solar_panels_sequence.length; i++){
+        //console.log(solar_panels_sequence[i])
+        viewer.entities.add({
+          polygon : {
+            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(solar_panels_sequence[i])),
+            perPositionHeight : true,
+            outline : true,
+            material : Cesium.Color.ROYALBLUE,
+          }
+        });
+    }
 }
