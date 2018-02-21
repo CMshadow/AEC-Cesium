@@ -217,10 +217,11 @@ handler.setInputAction(function(movement){
             material : Cesium.Color.fromAlpha(Cesium.Color.WHITE, 0.5)
           }
         });
-        path = [];
+        
 /////////////////////////构建solar panel////////////////////////////////////////
 ///baseLine = [斜率，偏移，【一点坐标】，【二点坐标]】
         var baseLine = math_make_a_line(outsidePoint[0].x,outsidePoint[0].y,outsidePoint[1].x,outsidePoint[1].y);
+        console.log("bl"+baseLine)
         var tan;
         var cos;
         var sin;
@@ -234,24 +235,17 @@ handler.setInputAction(function(movement){
             cos = Math.sqrt(1/(tan*tan+1));
             sin = -Math.sqrt(1-cos*cos);
         }
-        console.log("sin: "+sin);
-        console.log("cos: "+cos);
-        console.log("BL:"+baseLine);
         for(var n = 0;n<innerPoint.length;n++){
             var tempXIN = innerPoint[n].x;
             var tempYIN = innerPoint[n].y;
             innerPoint[n][0] = tempXIN*cos+tempYIN*sin;
             innerPoint[n][1] = -tempXIN*sin+tempYIN*cos;
-            //console.log(tempX);
-            //console.log(tempY);
         }
         for(n = 0;n<outsidePoint.length;n++){
             var tempXOUT = outsidePoint[n].x;
             var tempYOUT = outsidePoint[n].y;
             outsidePoint[n][0] = tempXOUT*cos+tempYOUT*sin;
             outsidePoint[n][1] = -tempXOUT*sin+tempYOUT*cos;
-            //console.log(tempX);
-            //console.log(tempY);
         }
         var points_sequence = [];
         for(n = 0;n<path.length;n++){
@@ -259,14 +253,17 @@ handler.setInputAction(function(movement){
             points_sequence[n].push(path[n].x);
             points_sequence[n].push(path[n].y);
         }
+        //console.log("path "+path);
+        //console.log("ps "+points_sequence);
         var panel_width = 1.94;
         var panel_length = 1;
         var width_offset = 0.3;
         var length_offset = 0.2; 
         var panel_cors = roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos);
         var new_panel_cors = roof_panel_cors_rotate_back(panel_cors, sin, cos);
+        //console.log(panel_cors);
         draw_ratoate_solar_panels(new_panel_cors);
-        
+        path = [];
     }
     //break;
   }
@@ -328,6 +325,10 @@ function math_make_a_line(x1,y1,x2,y2){
     var line_b = (y1-(line_a*x1));
     return [line_a,line_b,[x1,y1],[x2,y2]];
 }
+
+
+
+
 function roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos){
     var result = [];
 
@@ -603,12 +604,12 @@ function roof_panel_cors_rotate_back(solar_panels_sequence,sin, cos){
             var y = solar_panels_sequence[i][j+1];
             temp.push(x*new_cos+y*new_sin);
             temp.push(-x*new_sin+y*new_cos);
-            //temp.push(solar_panels_sequence[i][j+2]);
+            temp.push(solar_panels_sequence[i][j+2]);
         }
         new_solar_panels_sequence.push(temp);
         temp = [];
     }
-    //console.log(new_solar_panels_sequence.length)
+    console.log(new_solar_panels_sequence.length)
     return new_solar_panels_sequence;
 }
 
@@ -618,7 +619,7 @@ function draw_ratoate_solar_panels(solar_panels_sequence){
         //console.log(solar_panels_sequence[i])
         viewer.entities.add({
           polygon : {
-            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(solar_panels_sequence[i])),
+            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(solar_panels_sequence[i])),
             perPositionHeight : true,
             outline : true,
             material : Cesium.Color.ROYALBLUE,
