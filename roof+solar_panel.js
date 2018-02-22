@@ -268,7 +268,7 @@ handler.setInputAction(function(movement){
         var width_offset = 0.3;
         var length_offset = 0.2;
         var panel_cors = roof_solar_panels(points_sequence, 5, panel_width, panel_length, width_offset, length_offset, sin, cos);
-        
+
         path = [];
     }
     //break;
@@ -344,6 +344,11 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
     var north = boundings[2];
     var south = boundings[3];
 
+    var direct = true;
+    if(points_sequence[0][1]!== south && points_sequence[1][1]!== south){
+      direct = false;
+    }
+    console.log(direct);
 
     var new_cos = cos;
     var new_sin = -sin;
@@ -383,7 +388,7 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
     }
     //console.log('rows')
     //console.log(rows)
-    
+
     //算tan
     var tan = height/actual_vertical_dist;
 
@@ -510,31 +515,49 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
 
                         var temp_east = temp_west + (west_east_diff*panel_length/actual_horizental_dist);
 
-                        var deodist1 = new Cesium.EllipsoidGeodesic(
-                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos),
-                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
-                        var dist1 = deodist1.surfaceDistance;
-                        
-                        var deodist2 = new Cesium.EllipsoidGeodesic(
-                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos),
-                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin,-temp_east*new_sin+south*new_cos));
-                        var dist2 = deodist2.surfaceDistance;
-                        
-                        var deodist3 = new Cesium.EllipsoidGeodesic(
-                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos),
-                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin, -temp_east*new_sin+south*new_cos));
-                        var dist3 = deodist3.surfaceDistance;
-                        
-                        var deodist4 = new Cesium.EllipsoidGeodesic(
-                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos),
-                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
-                        var dist4 = deodist4.surfaceDistance;
-                        
-                        //console.log(dist1)
-                        //console.log(dist2)
-                        //console.log(dist3)
-                        //console.log(dist4)
-                        
+                        if(direct === true){
+                            var deodist1 = new Cesium.EllipsoidGeodesic(
+                                Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos),
+                                Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
+                            var dist1 = deodist1.surfaceDistance;
+
+                            var deodist2 = new Cesium.EllipsoidGeodesic(
+                                Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos),
+                                Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin,-temp_east*new_sin+south*new_cos));
+                            var dist2 = deodist2.surfaceDistance;
+
+                            var deodist3 = new Cesium.EllipsoidGeodesic(
+                                Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos),
+                                Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin, -temp_east*new_sin+south*new_cos));
+                            var dist3 = deodist3.surfaceDistance;
+
+                            var deodist4 = new Cesium.EllipsoidGeodesic(
+                                Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos),
+                                Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
+                            var dist4 = deodist4.surfaceDistance;
+                        }else{
+                          var deodist1 = new Cesium.EllipsoidGeodesic(
+                              Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos),
+                              Cesium.Cartographic.fromDegrees(temp_west*new_cos+north*new_sin, -temp_west*new_sin+north*new_cos));
+                          var dist1 = deodist1.surfaceDistance;
+
+                          var deodist2 = new Cesium.EllipsoidGeodesic(
+                              Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos),
+                              Cesium.Cartographic.fromDegrees(temp_east*new_cos+north*new_sin,-temp_east*new_sin+north*new_cos));
+                          var dist2 = deodist2.surfaceDistance;
+
+                          var deodist3 = new Cesium.EllipsoidGeodesic(
+                              Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos),
+                              Cesium.Cartographic.fromDegrees(temp_east*new_cos+north*new_sin, -temp_east*new_sin+north*new_cos));
+                          var dist3 = deodist3.surfaceDistance;
+
+                          var deodist4 = new Cesium.EllipsoidGeodesic(
+                              Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos),
+                              Cesium.Cartographic.fromDegrees(temp_west*new_cos+north*new_sin, -temp_west*new_sin+north*new_cos));
+                          var dist4 = deodist4.surfaceDistance;
+                        }
+
+
                         viewer.entities.add({
                           polygon : {
                             hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([
