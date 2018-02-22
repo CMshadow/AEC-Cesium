@@ -267,10 +267,8 @@ handler.setInputAction(function(movement){
         var panel_length = 1;
         var width_offset = 0.3;
         var length_offset = 0.2;
-        var panel_cors = roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos);
-        //var new_panel_cors = roof_panel_cors_rotate_back(panel_cors, sin, cos);
-        //console.log(panel_cors);
-        //draw_ratoate_solar_panels(new_panel_cors);
+        var panel_cors = roof_solar_panels(points_sequence, 5, panel_width, panel_length, width_offset, length_offset, sin, cos);
+        
         path = [];
     }
     //break;
@@ -337,8 +335,7 @@ function math_make_a_line(x1,y1,x2,y2){
 
 
 
-function roof_solar_panels(points_sequence, panel_width, panel_length, width_offset, length_offset, sin, cos){
-    console.log(points_sequence)
+function roof_solar_panels(points_sequence, height, panel_width, panel_length, width_offset, length_offset, sin, cos){
     var result = [];
 
     var boundings = generate_bounding_wnes(points_sequence);
@@ -386,13 +383,15 @@ function roof_solar_panels(points_sequence, panel_width, panel_length, width_off
     }
     //console.log('rows')
     //console.log(rows)
+    
+    //算tan
+    var tan = height/actual_vertical_dist;
 
     // 南北坐标差
     var north_south_diff = north - south;
 
     //北端起点
     var temp_north = north;
-
 
 
     var points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -511,13 +510,38 @@ function roof_solar_panels(points_sequence, panel_width, panel_length, width_off
 
                         var temp_east = temp_west + (west_east_diff*panel_length/actual_horizental_dist);
 
+                        var deodist1 = new Cesium.EllipsoidGeodesic(
+                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos),
+                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
+                        var dist1 = deodist1.surfaceDistance;
+                        
+                        var deodist2 = new Cesium.EllipsoidGeodesic(
+                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos),
+                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin,-temp_east*new_sin+south*new_cos));
+                        var dist2 = deodist2.surfaceDistance;
+                        
+                        var deodist3 = new Cesium.EllipsoidGeodesic(
+                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos),
+                            Cesium.Cartographic.fromDegrees(temp_east*new_cos+south*new_sin, -temp_east*new_sin+south*new_cos));
+                        var dist3 = deodist3.surfaceDistance;
+                        
+                        var deodist4 = new Cesium.EllipsoidGeodesic(
+                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos),
+                            Cesium.Cartographic.fromDegrees(temp_west*new_cos+south*new_sin, -temp_west*new_sin+south*new_cos));
+                        var dist4 = deodist4.surfaceDistance;
+                        
+                        //console.log(dist1)
+                        //console.log(dist2)
+                        //console.log(dist3)
+                        //console.log(dist4)
+                        
                         viewer.entities.add({
                           polygon : {
                             hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([
-                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10,
-                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10,
-                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10,
-                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10])),
+                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10+(dist1*tan),
+                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10+(dist2*tan),
+                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10+(dist3*tan),
+                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10+(dist4*tan)])),
                             perPositionHeight : true,
                             outline : true,
                             material : Cesium.Color.ROYALBLUE,
@@ -617,7 +641,7 @@ function roof_panel_cors_rotate_back(solar_panels_sequence,sin, cos){
         new_solar_panels_sequence.push(temp);
         temp = [];
     }
-    console.log(new_solar_panels_sequence.length)
+    //console.log(new_solar_panels_sequence.length)
     return new_solar_panels_sequence;
 }
 
