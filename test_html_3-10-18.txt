@@ -1,0 +1,320 @@
+<style>
+    @import url(../templates/bucket.css);
+    .demo-container {
+        width:300px;
+        opacity: 0.9;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        font-family: Arial;
+        color: #000000;
+        font-size: 12px;
+        padding: 5px;
+        margin: 5px 3px;
+        
+    }
+    .demo-container input {
+        opacity: 0.9;
+        font-family: Arial;
+        color: #000000;
+        font-size: 12px;
+        vertical-align: middle;
+        margin-top: 0;
+    }
+    .btn {
+      margin: 2px;
+      height: 20px;
+      border: none;
+      background: #38afff;
+      background-image: -webkit-linear-gradient(top, #38afff, #3099db);
+      background-image: -moz-linear-gradient(top, #38afff, #3099db);
+      background-image: -ms-linear-gradient(top, #38afff, #3099db);
+      background-image: -o-linear-gradient(top, #38afff, #3099db);
+      background-image: linear-gradient(to bottom, #38afff, #3099db);
+      -webkit-border-radius: 7;
+      -moz-border-radius: 7;
+      border-radius: 7px;
+      font-family: Arial;
+      color: #ffffff;
+      font-size: 12px;
+      padding: 2px 2px 2px 2px;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      margin: 2px;
+      height: 20px;
+      border: none;
+      background: #3cb0fd;
+      background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+      background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+      background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+      background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+      background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+      text-decoration: none;
+    }
+    .pic-container {
+        width:300px;
+        display: block;
+        height: 100px;
+        overflow-y: scroll;
+        overflow-x:hidden;
+        }
+    .sub-title {
+        border-radius: 10px;
+        font-family: Arial;
+        font-size: 16px;
+        font-weight: bold;
+        height: 20px;
+        }
+    .bold-text {
+        width:120px;
+        height: 30px;
+        display: inline-block;
+        font-family: Arial;
+        font-size: 14px;
+        }
+    .segment-label {
+        text-align: left;
+        border: none;
+        border-radius: 5px;
+        font-family: Arial;
+        font-size: 12px;
+        width: 280px;
+        height: 20px;
+        }
+    .segment-label:hover {
+        text-align: left;
+        border: none;
+        background: #3cb0fd;
+        border-radius: 5px;
+        font-family: Arial;
+        font-size: 12px;
+        width: 280px;
+        height: 20px;
+        }
+    .segment-sublabel{
+        padding-right: 80px;
+        text-align: left;
+        border: none;
+        font-family: Arial;
+        font-size: 12px;
+        width: 120px;
+        height: 20px;
+        }
+    .input-normal{
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding-left: 4px;
+        }
+}
+<!--templates-->
+<!--segments item templates-->
+    <button id="seg_item"class="segment-label" data-bind="click: changePanel1sub">
+        <label "class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+<!--segments item templates-->
+    
+</style>
+<div id="cesiumContainer" class="fullSize"></div>
+<div id="loadingOverlay"><h1>Loading...</h1></div>
+<div id="toolbar">
+    <div id="zoomButtons"></div>
+    
+    <div class="demo-container">
+        <h2 id="main_title">Design 1</h2>
+        <button class="btn" type="button">Project settings</button>
+    </div>
+    <div id="options" class="demo-container">
+        <button class="btn" type="button" style="width: 65px;height:40px" data-bind="attr:{target_str:'panel1'},click: selection_panel">Segments</button>
+        <button class="btn" type="button" style="width: 65px;height:40px" data-bind="attr:{target_str:'panel2'},click: selection_panel">Keepouts</button>
+        <button class="btn" type="button" style="width: 65px;height:40px" data-bind="attr:{target_str:'panel3'},click: selection_panel">Electrical</button>
+		<button class="btn" type="button" style="width: 65px;height:40px" data-bind="attr:{target_str:'panel4'},click: selection_panel">Advanced</button>
+            
+    </div>
+    
+    <div id="panel1"class="demo-container">
+        <div>Building Segments</div>
+        <hr>
+        <div>
+            <label><input type="checkbox" data-bind="checked: enableContour">Cast shadow</label>
+        </div>
+        <hr>
+        <div>
+            <button class="btn" type="button" style="width: 160px" data-bind="click:function(data, event) { startNewSeg('seg_list1','seg_item')}">Create a new building</button>
+        </div>
+        <div>
+            <button class="btn" type="button" style="width: 160px" data-bind="click:modifySegList">Altering test</button>
+        </div>
+        <div>
+            <button class="btn" type="button" style="width: 160px" data-bind="click:undoSeg">Undo Seg</button>
+        </div>
+        <br>
+        <div class="sub-title">Segments</div>
+        <br>
+        <div class="bold-text">Name</div><label class="bold-text">Capcity</label>
+        <div id="seg_list1"class="pic-container">
+            
+            <button class="segment-label" data-bind="click: changePanel1sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel1sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel1sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+        </div>
+        <hr>
+        <br>
+        Statistic:
+    </div>
+    
+    <div id="panel2"class="demo-container">
+        <div>Attributes Settings</div>
+        <hr>
+        <div>
+            <label><input type="checkbox" data-bind="checked: enableContour">Display shadow</label>
+        </div>
+        <hr>
+        <div>
+            Sun direction   <input style="width: 125px" type="range" min="1.0" max="500.0" step="1.0" data-bind="value: contourSpacing, valueUpdate: 'input', enable: enableContour"> <span data-bind="text: contourSpacing"></span>
+        </div>
+        <div>
+            Sun inclination <input style="width: 125px" type="range" min="1.0" max="10.0" step="1.0" data-bind="value: contourWidth, valueUpdate: 'input', enable: enableContour"> <span data-bind="text: contourWidth"></span>
+        </div>
+        <hr>
+        <div>
+            <button class="btn" type="button" style="width: 120px">Change Height</button>
+            <input style="width: 120px" type="text" name="lname"> 
+        </div>
+        <div>
+            <button class="btn" type="button"  style="width: 120px">Change Setback</button>
+            <input style="width: 120px" type="text" name="lname"> 
+        </div>
+    </div>
+    
+    <div id="panel3sub"class="demo-container">
+        <div class="bold-text" style="width:200px">Electrical Compartment</div>
+        <hr>
+        <div>
+        <div class="bold-text">Wiring Zone</div>
+            <label><input type="checkbox">AC</label>
+            <label><input type="checkbox">DC</label>
+        <div class="bold-text">DC Nameplate:</div>
+        <div class="bold-text">AC Nameplate:</div>
+        </div>
+        <hr>
+        Description:<input style="width: 100px" type="text" name="lname"> 
+        <br>
+        <br>
+        Inverter:<select>
+          <option value="type1">Type1</option>
+          <option value="type2">Type2</option>
+          <option value="type3">Type3</option>
+          <option value="type4">Type4</option>
+        </select>
+        Count: 
+        <hr>
+        <button class="btn" type="button" >Add Combiner</button>
+            <hr>
+        <button class="btn" type="button" >Add Optimizer</button>
+        <hr>
+    </div>
+    
+    <div id="panel4"class="demo-container">
+        <div class="bold-text">Advanced features</div>
+        <hr>
+        <button class="btn" type="button" style="width: 60px">Shading</button>
+        <button class="btn" type="button" style="width: 60px">Overlay</button>
+    </div>
+    
+    <div id="panel1sub"class="demo-container">
+        <button class="btn" type="button" style="width: 80px" data-bind="attr:{target_name:'panel1'},click: changePanel1">Back to list</button>
+        <br><div class="bold-text">Modules: <br> Area: </div><hr>
+        
+        <div class="sub-title">Parameters</div>
+        <div>
+            <label class="bold-text"style="width: 120px">Description</label>
+            <input class="input-normal" style="width: 120px" type="text"> 
+        </div>
+        <label class="bold-text"style="width: 120px">Panel Type</label>
+        <select  class="input-normal" style="width: 120px">
+          <option value="type1">Type1</option>
+          <option value="type2">Type2</option>
+          <option value="type3">Type3</option>
+          <option value="type4">Type4</option>
+        </select>
+        <div>
+            <label class="bold-text"style="width: 120px">Installation Type</label>
+            <select class="input-normal" style="width: 120px">
+          <option value="type1">Type1</option>
+          <option value="type2">Type2</option>
+          <option value="type3">Type3</option>
+          <option value="type4">Type4</option>
+        </select>
+        </div>
+        <div>
+            <label class="bold-text"style="width: 120px">Azimuth</label>
+            <input class="input-normal" style="width: 80px" type="text" value="0.0">° 
+        </div>
+        <div>
+            <label class="bold-text"style="width: 120px">Panel Tilt</label>
+            <input class="input-normal" style="width: 80px" type="text" value="0.0">° 
+        </div>
+        <div>
+            <label class="bold-text"style="width: 120px">Edge Setback</label>
+            <input class="input-normal" style="width: 80px" type="text" value="0.0">m
+        </div>
+        <hr>
+        <div class="sub-title">Automatic Layout Rules</div>
+        <label class="bold-text"style="width: 80px">Frame Size</label>
+        <input class="input-normal" style="width: 40px" type="text" value="0.0"> up 
+        <input class="input-normal" style="width: 40px" type="text" value="0.0"> wide
+        <div>
+          <label class="bold-text"style="width: 120px">Default Orientation</label>
+            <select class="input-normal" style="width: 120px">
+          <option value="type1">LandScape(Horizontal)</option>
+          <option value="type2">Type2</option>
+          <option value="type3">Type3</option>
+          <option value="type4">Type4</option>
+        </select>
+        </div>
+        <div>
+        <label class="bold-text">Row Spacing</label>
+        <input class="input-normal" style="width: 40px" type="text" value="0.0">m
+        </div>
+        <div>
+        <label class="bold-text">Module Spacing</label>
+        <input class="input-normal" style="width: 40px" type="text" value="0.0">m
+        </div>
+        <div>
+        <label class="bold-text">Frame Spacing</label>
+        <input class="input-normal" style="width: 40px" type="text" value="0.0">m
+        </div>
+    </div>
+    <div id="panel3"class="demo-container">
+        <div class="sub-title">Wiring Zones</div>
+        <br>
+        <div class="bold-text">Name</div><label class="bold-text">Capcity</label>
+        <div class="pic-container">
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+            <button class="segment-label" data-bind="click: changePanel3sub">
+                <label class="segment-sublabel">segment</label><label class="segment-sublabel">0kw</label></button>
+        </div>
+    </div>
+</div>

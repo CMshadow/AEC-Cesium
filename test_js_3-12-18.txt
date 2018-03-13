@@ -1,0 +1,356 @@
+﻿//init cesium viewport
+var viewer = new Cesium.Viewer('cesiumContainer',{
+    animation : false,
+    timeline : false
+});
+//global attributes
+var is_paneling = false;
+var ongoing_panel_attr = {target_list:"",item:"",id:""};
+var ongoing_points = [];
+var ongoing_points_data = [];
+var ongoing_lines = new Cesium.PolylineCollection();
+var ongoing_lines_data = [];
+var arr_point = [];
+var redo_enty = [];
+var redo_index = 0;
+
+//get panels
+var panel1 = document.getElementById("panel1");
+var panel2 = document.getElementById("panel2");
+var panel3 = document.getElementById("panel3");
+var panel4 = document.getElementById("panel4");
+var panel1sub = document.getElementById("panel1sub");
+var panel3sub = document.getElementById("panel3sub");
+
+//init panels' display
+panel1.style.display = "block";
+panel2.style.display = "none";
+panel3.style.display = "none";
+panel4.style.display = "none";
+panel1sub.style.display = "none";
+panel3sub.style.display = "none";
+
+//init all the panels
+var panel_list = [];
+panel_list.push(panel1);
+panel_list.push(panel2);
+panel_list.push(panel3);
+panel_list.push(panel4);
+panel_list.push(panel1sub);
+panel_list.push(panel3sub);
+
+//lists collections
+var seg_enty_list = [];
+var seg_list = [];
+var seg = {name:"seg1",capacity:0,vertics:[]};
+seg_list.push(seg);
+console.log(seg_list[0].name);
+
+//utilities & member funcs
+function addItemToList(target_list,item){
+    //add a item(DOM) to designated list(DOM)
+    var seg_list = document.getElementById(target_list);
+        var seg_empty = document.getElementById(item);
+        var clone = seg_list.firstElementChild.cloneNode(true);
+            seg_list.appendChild(clone);
+}
+function getIndexById(id,list){
+    for(var i=0;i<=list.length;i++){
+        if(list[i].id === id){
+        return list[i];
+        }
+    }
+}
+//ko viewmodel
+var viewModel = {
+    enableContour: false,
+    contourSpacing: 150.0,
+    contourWidth: 2.0,
+    selectedShading: 'elevation',
+    selection_panel:function(data, event){
+        
+        try{
+            var element = event.target;
+            var target_str = element.getAttribute("target_str");
+            console.log(target_str);
+            var target_obj = document.getElementById(target_str);
+            console.log(target_obj.id);
+            console.log(panel_list.length);
+            for(var i=0;i<panel_list.length;i++){
+                panel_list[i].style.display="none";
+            }
+            target_obj.style.display="block";
+            
+        }
+        catch(error){
+            console.log(error);
+        }
+    },
+    undoSeg:function(){
+        var count = seg_enty_list.length;
+        for(var i=0;i<count;i++){
+            console.log(seg_enty_list[i].id);
+        }
+        if(count>0){
+            viewer.entities.remove(viewer.entities.removeById(seg_enty_list[count-1].id));
+            seg_enty_list.pop();
+        }
+            //if(seg_enty_list.length>0){
+            //console.log(viewer.entities.remove(seg_enty_list[count]));
+        //}
+        redo_index--;
+    },
+    redoSeg:function(index){
+        var temp_enty;
+        if(vecList.length <=2){
+            console.log("not enough points");
+            return;
+        }
+        if(vecList.length !== 0){
+            var tempList = [];
+            vecList.forEach(function(element){
+              tempList.push(element.x);
+              tempList.push(element.y);
+              tempList.push(10);
+        });
+
+        temp_enty = viewer.entities.add({
+            name : 'Building',
+            description : "Building",
+            polygon : {
+                hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
+                perPositionHeight : true,
+                extrudedHeight : 0.0,
+                outline : true,
+                outlineColor : Cesium.Color.BLACK,
+                outlineWidth : 4,
+                material : new Cesium.ColorMaterialProperty({
+                    color : Cesium.Color.GHOSTWHITE,
+                    alpha : 0.7
+                })
+            }
+        });
+        vecList = [];
+      }
+      building_points = []; 
+       redo_index++;
+    },
+    //create a new building
+    startNewSeg: function(target_list,item){
+        is_paneling = true;
+        ongoing_panel_attr.target_list = target_list;
+        ongoing_panel_attr.item = item;
+        console.log(ongoing_panel_attr.target_list,ongoing_panel_attr.item);
+        if(!is_paneling){
+            ongoing_panel_attr.target_list = target_list;
+            ongoing_panel_attr.item = item;
+        }
+        else{
+            console.log("Drawing already");
+        }
+        
+    },
+    modifySegList: function(){
+        var searchEles = document.getElementById("seg_list1").children;
+        for(var i = 0; i < searchEles.length; i++) {
+            searchEles[i].children.item(0).innerHTML = "another";
+            searchEles[i].children.item(1).innerHTML = "another";
+        }
+        //var nodelist0 = searchEles.getElementsByTagName("label").item(0).innerHTML;
+        //    nodelist0 = "cyka";
+        //var nodelist1 = searchEles.getElementsByTagName("label").item(1).innerHTML;
+        //nodelist1 = "blyat";
+        //document.getElementsByTagName("label").item(0).innerHTML= "blyat";
+    },
+    changePanel3sub: function(){
+        panel1.style.display = "none";
+        panel2.style.display = "none";
+        panel3.style.display = "none";
+        panel4.style.display = "none";
+        panel1sub.style.display = "none";
+        panel3sub.style.display = "block";
+	},
+    changePanel1sub: function(){
+        panel1.style.display = "none";
+        panel2.style.display = "none";
+        panel3.style.display = "none";
+        panel4.style.display = "none";
+        panel1sub.style.display = "block";
+        panel3sub.style.display = "none";
+	},
+	changePanel1: function(){
+        panel1.style.display = "block";
+        panel2.style.display = "none";
+        panel3.style.display = "none";
+        panel4.style.display = "none";
+        panel1sub.style.display = "none";
+        panel3sub.style.display = "none";
+	}
+};
+Cesium.knockout.track(viewModel);
+
+var toolbar = document.getElementById('toolbar');
+Cesium.knockout.applyBindings(viewModel, toolbar);
+
+//Seed随机数
+Cesium.Math.setRandomNumberSeed(0);
+
+
+//太阳能板参数
+var solar_panel_width = 1.94;
+var solar_panel_length = 1;
+var width_offset = 0.3;
+var length_offset = 0.1;
+var top_down_offset = 0;
+
+//房屋点sequence
+var building_points = [];
+
+
+
+//删除默认双击功能
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+
+//定义entities
+var entities = viewer.entities;
+
+
+
+var vecList = [];
+var start_pos = 0;
+var scene = viewer.scene;
+var handler;
+
+//定义handler
+handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+
+//画房子外形函数
+handler.setInputAction(function(movement){
+  //only when drawing panels
+  if(!is_paneling){
+      return;
+  }
+  var cartesian = viewer.camera.pickEllipsoid(movement.position, scene.globe.ellipsoid);
+
+  if (cartesian){
+    var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+    var this_point = [Cesium.Math.toDegrees(cartographic.longitude), Cesium.Math.toDegrees(cartographic.latitude)];
+    building_points.push(this_point);
+    var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+    var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+
+    vecList.push(new Cesium.Cartesian2(longitudeString,latitudeString));
+
+    //初始化起始点
+    if(start_pos === 0){
+      start_pos = new Cesium.Cartesian2(longitudeString,latitudeString);
+    }
+
+    //节点处生成黄点
+    /*
+    ongoing_points.add({
+        position : new Cesium.CallbackProperty(function() {
+          return Cesium.Cartesian3.fromDegrees(longitudeString, latitudeString);
+          }, false),
+        point : {
+          pixelSize : 8,
+          color : Cesium.Color.YELLOW
+        }
+    });
+    viewer.scene.primitives.add(ongoing_points);
+    */
+    var temp_ele = new Cesium.Cartesian2(longitudeString,latitudeString);
+    
+    ongoing_points_data.push(temp_ele.x);
+    ongoing_points_data.push(temp_ele.y);
+      console.log(ongoing_points_data[0]);
+    arr_point.push(viewer.entities.add({
+        position : new Cesium.CallbackProperty(function() {
+          return Cesium.Cartesian3.fromDegrees(longitudeString, latitudeString);
+          }, false),
+        point : {
+          pixelSize : 8,
+          color : Cesium.Color.YELLOW
+        }
+    }));
+
+    //如果vecList有两点及以上开始画线
+    if(vecList.length>=2){
+      //ongoing_lines = new Cesium.PolylineCollection();
+      var tempArray = [];
+      vecList.forEach(function(element){
+        //console.log(element);
+        tempArray.push(element.x);
+        tempArray.push(element.y);
+      });
+      //push data to archive
+      ongoing_lines_data.push(tempArray);
+      //create a new line seg
+      ongoing_lines.add ({
+        positions : Cesium.Cartesian3.fromDegreesArray(tempArray),
+        width : 1,
+      });
+      viewer.scene.primitives.add(ongoing_lines);
+      //for(var i=0;i<ongoing_lines.positions.length;i++){
+      //    console.log(ongoing_lines.positions[i]);
+      //}
+    }
+  }
+}, Cesium.ScreenSpaceEventType.LEFT_DOWN, Cesium.KeyboardEventModifier.SHIFT);
+
+
+
+//双击闭合房子外沿函数
+handler.setInputAction(function(movement){
+  var temp_enty;
+  if(vecList.length <=2){
+      console.log("not enough points");
+      return;
+  }
+  if(vecList.length !== 0){
+    var tempList = [];
+    vecList.forEach(function(element){
+      tempList.push(element.x);
+      tempList.push(element.y);
+      tempList.push(10);
+    });
+
+    temp_enty = viewer.entities.add({
+      name : 'Building',
+      description : "Building",
+      polygon : {
+        hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
+        perPositionHeight : true,
+        extrudedHeight : 0.0,
+        outline : true,
+        outlineColor : Cesium.Color.BLACK,
+        outlineWidth : 4,
+        material : new Cesium.ColorMaterialProperty({
+            color : Cesium.Color.GHOSTWHITE,
+            alpha : 0.7
+        })
+      }
+    });
+    vecList = [];
+  }
+  building_points = [];
+  //add a lable
+  //console.log(ongoing_panel_attr.target_list,ongoing_panel_attr.item);
+  addItemToList(ongoing_panel_attr.target_list,ongoing_panel_attr.item);
+  //complement a lable-building hash
+  
+  seg_enty_list.push(temp_enty);
+  console.log(temp_enty.polygon.hierarchy.holes);
+  ongoing_panel_attr.id = temp_enty.id;
+  //finish drawing
+  is_paneling = false;
+  //remove onoging points
+  for(var i=0;i<arr_point.length;i++){
+      viewer.entities.removeById(arr_point[i].id);
+  }
+  //remove ongoing polylines
+  ongoing_lines.removeAll();
+  //redo_enty.push(temp_enty);
+}, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
