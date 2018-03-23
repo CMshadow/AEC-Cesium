@@ -5,12 +5,6 @@ viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpace
 viewer.scene.globe.depthTestAgainstTerrain = false;
 var entities = viewer.entities;
 
-var stripeMaterial = new Cesium.StripeMaterialProperty({
-    evenColor : Cesium.Color.WHITE.withAlpha(0.5),
-    oddColor : Cesium.Color.BLUE.withAlpha(0.5),
-    repeat : 5.0
-});
-
 var pointsList = [];//中间点list
 var start_pos = 0;
 var scene = viewer.scene;
@@ -227,41 +221,40 @@ handler.setInputAction(function(movement){
     break;
   }
 
-//////////////////////////////////////////////////////////////////////
-if(vecList.length !== 0){
-  var tempList = [];
-  vecList.forEach(function(element){
-    tempList.push(element.x);
-    tempList.push(element.y);
-    tempList.push(temp_height);
+  if(vecList.length !== 0){
+    var tempList = [];
+    vecList.forEach(function(element){
+      tempList.push(element.x);
+      tempList.push(element.y);
+      tempList.push(temp_height);
 
-    var point = viewer.entities.add({
-      position : new Cesium.CallbackProperty(function() {
-        return Cesium.Cartesian3.fromDegrees(element.x,element.y,temp_height);
-        }, false),
-      point : {
-        pixelSize : 15,
-        color : Cesium.Color.YELLOW
-      }
+      var point = viewer.entities.add({
+        position : new Cesium.CallbackProperty(function() {
+          return Cesium.Cartesian3.fromDegrees(element.x,element.y,temp_height);
+          }, false),
+        point : {
+          pixelSize : 15,
+          color : Cesium.Color.YELLOW
+        }
+    });
+
   });
+    // entities.add({
+    //   name : 'Building',
+    //   polygon : {
+    //     hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
+    //     perPositionHeight : true,
+    //     extrudedHeight : 0.0,
+    //     outline : true,
+    //     outlineColor : Cesium.Color.BLACK,
+    //     outlineWidth : 4,
+    //     material : Cesium.Color.fromRandom({alpha : 0.5})
+    //   }
+    // });
+    vecList = [];
 
-});
-  // entities.add({
-  //   name : 'Building',
-  //   polygon : {
-  //     hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
-  //     perPositionHeight : true,
-  //     extrudedHeight : 0.0,
-  //     outline : true,
-  //     outlineColor : Cesium.Color.BLACK,
-  //     outlineWidth : 4,
-  //     material : Cesium.Color.fromRandom({alpha : 0.5})
-  //   }
-  // });
-  vecList = [];
-
-}
-connect_dict= {};
+  }
+  connect_dict= {};
 
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
@@ -345,6 +338,9 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
     console.log("sin"+sin)
     console.log("cos"+cos)
     console.log("tan"+(sin/cos))
+
+    console.log('\npoints_sequence')
+    console.log(points_sequence)
 
     var new_cos = cos;
     var new_sin = -sin;
@@ -430,24 +426,24 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
     if(points_sequence[0][1]!== south && points_sequence[1][1]!== south){
       direct = false;
     }
-    console.log("direct"+direct);
+    console.log("direct "+direct);
 
     //外围矩形点
     var outer_top_left = Cesium.Cartesian3.fromDegrees(west*new_cos+north*new_sin,-west*new_sin+north*new_cos);
     var outer_bot_left = Cesium.Cartesian3.fromDegrees(west*new_cos+south*new_sin,-west*new_sin+south*new_cos);
     var outer_top_right = Cesium.Cartesian3.fromDegrees(east*new_cos+north*new_sin,-east*new_sin+north*new_cos);
     var outer_bot_right = Cesium.Cartesian3.fromDegrees(east*new_cos+south*new_sin,-east*new_sin+south*new_cos);
-    console.log("outer_top_left "+outer_top_left)
-    console.log("outer_bot_left "+outer_bot_left)
-    console.log("outer_top_right "+outer_top_right)
-    console.log("outer_bot_right "+outer_bot_right)
-    console.log("\n")
-    console.log("vertical_distance"+(vertical_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
-    console.log("horizental_distance"+(horizental_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
-    console.log("distance"+(distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
-    console.log("vertical_distance"+(vertical_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
-    console.log("horizental_distance"+(horizental_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
-    console.log("distance"+(distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
+    // console.log("outer_top_left "+outer_top_left)
+    // console.log("outer_bot_left "+outer_bot_left)
+    // console.log("outer_top_right "+outer_top_right)
+    // console.log("outer_bot_right "+outer_bot_right)
+    // console.log("\n")
+    // console.log("vertical_distance"+(vertical_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
+    // console.log("horizental_distance"+(horizental_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
+    // console.log("distance"+(distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south))))
+    // console.log("vertical_distance"+(vertical_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
+    // console.log("horizental_distance"+(horizental_distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
+    // console.log("distance"+(distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(east,north))))
 
     // Mathematical equations for bounding lines
 
@@ -466,24 +462,30 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
 
 
     // maximum distance of the out-bounding rectangle
-    var max_vertical_dist = distance(Cesium.Cartesian3.fromDegrees(west,north),Cesium.Cartesian3.fromDegrees(west,south));
+    var max_vertical_dist = distance(Cesium.Cartesian3.fromDegrees(west*new_cos+north*new_sin,-west*new_sin+north*new_cos),Cesium.Cartesian3.fromDegrees(west*new_cos+south*new_sin,-west*new_sin+south*new_cos));
 
-    // number of rows
+
     var actual_vertical_dist = max_vertical_dist;
-    var row_check = actual_vertical_dist-panel_width;
-    var rows = 0;
-    if(row_check >= 0){
-        rows = parseInt(row_check/(panel_width+width_offset),10)+1;
-    }
-    //console.log('rows')
-    //console.log(rows)
 
     //算太阳能板tan, cos
     var panel_tan = height/actual_vertical_dist;
     var panel_cos = Math.sqrt(1/(panel_tan*panel_tan+1));
 
+    // number of rows
+    var row_check = actual_vertical_dist-(panel_width*panel_cos);
+    var rows = 0;
+    if(row_check >= 0){
+        rows = parseInt(row_check/(panel_width+width_offset)*panel_cos,10)+1;
+    }
+    //console.log('rows')
+    //console.log(rows)
+    console.log(actual_vertical_dist)
+    console.log(rows)
+
     // 南北坐标差
     var north_south_diff = north - south;
+    console.log(north)
+    console.log(south)
 
     //北端起点
     var temp_north = north;
@@ -508,6 +510,7 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
             }
         }
 
+        console.log("cor_north_list: ",cor_north_list)
 
         cor_north_list.sort(Comparator);
 
@@ -524,7 +527,6 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
 
             //北-查找东交点 cor_north_right
             var cor_north_right = cor_north_list[e+1];
-
 
             //南-计算所有外框与南线的交点坐标 cor_list
             temp_south = temp_north - (north_south_diff*panel_width*panel_cos/actual_vertical_dist);
@@ -659,10 +661,10 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
                         viewer.entities.add({
                           polygon : {
                             hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([
-                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10.2+(dist1*panel_tan),
-                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10.2+(dist2*panel_tan),
-                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10.2+(dist3*panel_tan),
-                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10.2+(dist4*panel_tan)])),
+                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10.1+(dist1*panel_tan),
+                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10.1+(dist2*panel_tan),
+                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10.1+(dist3*panel_tan),
+                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10.1+(dist4*panel_tan)])),
                             perPositionHeight : true,
                             outline : true,
                             material : Cesium.Color.ROYALBLUE,
@@ -734,11 +736,11 @@ function horizental_distance(point1,point2){
 
 
 //list排序辅助
- function Comparator(a, b) {
+function Comparator(a, b) {
    return (a[0] > b[0]);
  }
 
- function generate_bounding_wnes(points_sequence){
+function generate_bounding_wnes(points_sequence){
      //points_sequence中分类东西南北坐标
      var lons = [];
      var lats = [];
