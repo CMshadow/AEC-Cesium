@@ -661,11 +661,16 @@ function roof_solar_panels(points_sequence, height, panel_width, panel_length, w
                         viewer.entities.add({
                           name : "PV",
                           polygon : {
-                            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights([
-                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10.1+(dist1*panel_tan),
-                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10.1+(dist2*panel_tan),
-                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10.1+(dist3*panel_tan),
-                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10.1+(dist4*panel_tan)])),
+                            hierarchy : Cesium.Cartesian3.fromDegreesArray([
+                                temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,
+                                temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,
+                                temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,
+                                temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,]),
+                            // hierarchy : Cesium.Cartesian3.fromDegreesArrayHeights([
+                            //     temp_west*new_cos+temp_south*new_sin,-temp_west*new_sin+temp_south*new_cos,10.1+(dist1*panel_tan),
+                            //     temp_east*new_cos+temp_south*new_sin,-temp_east*new_sin+temp_south*new_cos,10.1+(dist2*panel_tan),
+                            //     temp_east*new_cos+temp_north*new_sin,-temp_east*new_sin+temp_north*new_cos,10.1+(dist3*panel_tan),
+                            //     temp_west*new_cos+temp_north*new_sin,-temp_west*new_sin+temp_north*new_cos,10.1+(dist4*panel_tan)]),
                             perPositionHeight : true,
                             outline : true,
                             material : Cesium.Color.ROYALBLUE,
@@ -787,7 +792,7 @@ function draw_ratoate_solar_panels(solar_panels_sequence){
         viewer.entities.add({
           name : "PV",
           polygon : {
-            hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(solar_panels_sequence[i])),
+            hierarchy : Cesium.Cartesian3.fromDegreesArrayHeights(solar_panels_sequence[i]),
             perPositionHeight : true,
             outline : true,
             material : Cesium.Color.ROYALBLUE,
@@ -876,7 +881,7 @@ handler.setInputAction(function(movement){
       name : 'Keepout',
       description : "<button onclick=\"myFunction()\">Click me</button>",
       polygon : {
-        hierarchy : new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(tempList)),
+        hierarchy : Cesium.Cartesian3.fromDegreesArrayHeights(tempList),
         perPositionHeight : true,
         extrudedHeight : 0.0,
         outline : true,
@@ -901,21 +906,77 @@ handler.setInputAction(function(movement){
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK, Cesium.KeyboardEventModifier.ALT);
 
 function Intersect_Keepout(PV_entities, keepout_points){
+  console.log(PV_entities[0].polygon.hierarchy.getValue().length)
+  console.log(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[0].polygon.hierarchy.getValue()[0]).longitude));
+  console.log(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[0].polygon.hierarchy.getValue()[0]).latitude));
+  console.log(keepout_points.length)
 
-}
+  var boundings = generate_bounding_wnes(keepout_points);
+  var west = boundings[0];
+  var east = boundings[1];
+  var north = boundings[2];
+  var south = boundings[3];
 
-function In_Keepout(PV_entities, keepout_points){
 
+
+
+
+
+  var polylines = new Cesium.PolylineCollection();
+  var tempArray = [];
+  polylines.add({
+    positions : Cesium.Cartesian3.fromDegreesArray([
+      west,north,
+      west,south,
+      east,south,
+      east,north,
+      west,north
+    ]),
+    width : 1,
+    color: Cesium.Color.BLUE
+  });
+  viewer.scene.primitives.add(polylines);
+
+
+
+
+
+
+  var filtered_PV_entities = [];
+
+  for(var p=0; p < PV_entities.length; p++){
+    var all_points_exclusive = false;
+    var exclusive_counter = 0;
+
+    for(var q=0; q < PV_entities[p].polygon.hierarchy.getValue().length; q++){
+      var longitude = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude)
+      var latitude = Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude)
+      if((longitude < west || longitude > east) || (latitude < south || latitude > north)){
+        exclusive_counter += 1;
+      }
+    }
+
+    if(exclusive_counter === 4){
+      all_points_exclusive = true;
+    }
+
+    if(all_points_exclusive === false){
+      filtered_PV_entities.push(PV_entities[p]);
+    }
+  }
+
+  console.log(filtered_PV_entities.length)
 }
 
 function Keepout_Delete_Panel(keepout_points){
-  var PV_entities = new Cesium.EntityCollection();
+  var PV_entities = [];
   for(var i=0; i < viewer.entities.values.length; i++){
     if(viewer.entities.values[i].name === "PV"){
-      PV_entities.add(viewer.entities.values[i]);
+      PV_entities.push(viewer.entities.values[i]);
+      //var test = viewer.entities.values[i].polygon.hierarchy.getValue(viewer.clock.currentTime)
+      //console.log(test)
     }
   }
 
   Intersect_Keepout(PV_entities, keepout_points);
-  In_Keepout(PV_entities, keepout_points);
 }
