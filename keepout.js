@@ -711,6 +711,15 @@ function lines_intersection_coordinates(baseline,line2){
     return [x,y];
 }
 
+function lines_intersection_coordinates_keepout(baseline,line2){
+    var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
+    var y = baseline[0]*x+baseline[1];
+    if((x<line2[2][0] && x<line2[3][0]) || (x>line2[2][0] && x>line2[3][0]) || (y<line2[2][1] && y<line2[3][1]) || (y>line2[2][1] && y>line2[3][1]) || (x<baseline[2][0] && x<baseline[3][0]) || (x>baseline[2][0] && x>baseline[3][0]) || (y<baseline[2][1] && y<baseline[3][1]) || (y>baseline[2][1] && y>baseline[3][1])){
+        return undefined;
+    }
+    return [x,y];
+}
+
 //calculate the intersection coordinate of two lines for setback function
 function lines_intersection_coordinates_setback(baseline,line2){
     var x = (line2[1]-baseline[1])/(baseline[0]-line2[0]);
@@ -934,7 +943,6 @@ function Intersect_Keepout(PV_entities, keepout_points){
 
 
   var polylines = new Cesium.PolylineCollection();
-  var tempArray = [];
   polylines.add({
     positions : Cesium.Cartesian3.fromDegreesArray([
       west,north,
@@ -977,14 +985,28 @@ function Intersect_Keepout(PV_entities, keepout_points){
     }
   }
 
+  // for(var p = 0; p < filtered_PV_entities.length; p++){
+  //   for(var q=0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
+  //     polylines.add({
+  //       positions : Cesium.Cartesian3.fromDegreesArray([
+  //         Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).longitude),
+  //         Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).latitude),
+  //         Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).longitude)-10,
+  //         Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).latitude)]),
+  //       width : 1,
+  //     });
+  //     viewer.scene.primitives.add(polylines);
+  //   }
+  // }
+
   console.log("filtered_PV_entities")
   console.log(filtered_PV_entities.length)
   console.log("============================")
 
   for(p = 0; p < filtered_PV_entities.length; p++){
     for(q = 0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
-      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
-      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
 
       for(var o = 0; o < keepout_points.length; o++){
         if(longitude === parseFloat(keepout_points[o][0].toFixed(12)) && latitude === parseFloat(keepout_points[o][0].toFixed(12))){
@@ -1024,11 +1046,9 @@ function Intersect_Keepout(PV_entities, keepout_points){
 
   for(p = 0; p < filtered_PV_entities.length; p++){
     for(q = 0; q < 4; q++){
-      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
-      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
       var temp_line = math_make_a_line(longitude,latitude,longitude-10,latitude);
-
-      var polylines = new Cesium.PolylineCollection();
 
       polylines.add({
           positions : Cesium.Cartesian3.fromDegreesArray([longitude,latitude,longitude-10,latitude]),
@@ -1038,8 +1058,12 @@ function Intersect_Keepout(PV_entities, keepout_points){
 
       var intersection_list = [];
       for(o = 0; o <keepout_edges.length; o++){
-        var intersection_coordinate = lines_intersection_coordinates(temp_line,keepout_edges[o]);
-        console.log(intersection_coordinate)
+        var intersection_coordinate = lines_intersection_coordinates_keepout(temp_line,keepout_edges[o]);
+
+        if(intersection_coordinate !==undefined){
+          console.log(intersection_coordinate)
+        }
+
         if(intersection_coordinate !==undefined && !isNaN(intersection_coordinate[0]) && !isNaN(intersection_coordinate[1]) && !intersection_list.includes(intersection_coordinate)){
           intersection_list.push(intersection_coordinate)
         }
@@ -1057,6 +1081,8 @@ function Intersect_Keepout(PV_entities, keepout_points){
   }
   console.log("remove_PV_entities")
   console.log(remove_PV_entities.length)
+
+  return remove_PV_entities
 }
 
 function Keepout_Delete_Panel(keepout_points){
@@ -1069,5 +1095,11 @@ function Keepout_Delete_Panel(keepout_points){
     }
   }
 
-  Intersect_Keepout(PV_entities, keepout_points);
+  var remove_PV_entities = Intersect_Keepout(PV_entities, keepout_points);
+
+  for(var p = 0; p < remove_PV_entities.length; p++){
+    console.log(remove_PV_entities[p].id)
+    remove_PV_entities[p].polygon.material=Cesium.Color.GREEN;
+    //viewer.entities.remove(remove_PV_entities[p].id);
+  }
 }
