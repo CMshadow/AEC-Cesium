@@ -979,6 +979,7 @@ function Intersect_Keepout(PV_entities, keepout_points){
 
   console.log("filtered_PV_entities")
   console.log(filtered_PV_entities.length)
+  console.log("============================")
 
   for(p = 0; p < filtered_PV_entities.length; p++){
     for(q = 0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
@@ -1027,10 +1028,19 @@ function Intersect_Keepout(PV_entities, keepout_points){
       var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
       var temp_line = math_make_a_line(longitude,latitude,longitude-10,latitude);
 
+      var polylines = new Cesium.PolylineCollection();
+
+      polylines.add({
+          positions : Cesium.Cartesian3.fromDegreesArray([longitude,latitude,longitude-10,latitude]),
+          width : 1,
+      });
+      viewer.scene.primitives.add(polylines);
+
       var intersection_list = [];
       for(o = 0; o <keepout_edges.length; o++){
         var intersection_coordinate = lines_intersection_coordinates(temp_line,keepout_edges[o]);
-        if(intersection_coordinate !==undefined && !intersection_list.includes(intersection_coordinate)){
+        console.log(intersection_coordinate)
+        if(intersection_coordinate !==undefined && !isNaN(intersection_coordinate[0]) && !isNaN(intersection_coordinate[1]) && !intersection_list.includes(intersection_coordinate)){
           intersection_list.push(intersection_coordinate)
         }
       }
