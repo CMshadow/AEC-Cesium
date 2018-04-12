@@ -1,6 +1,17 @@
 Cesium.Math.setRandomNumberSeed(0);
 
-var viewer = new Cesium.Viewer('cesiumContainer');
+var viewer=new Cesium.Viewer("cesiumContainer",
+{
+    animation:!1,
+    timeline:!1,
+    fullscreenButton:!1,
+    vrButton:!1,
+    sceneModePicker:!1,
+    homeButton:!0,
+    navigationHelpButton:!1,
+    baseLayerPicker:!0,
+});
+viewer.cesiumWidget.creditContainer.style.display="none";
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 viewer.scene.globe.depthTestAgainstTerrain = false;
 var entities = viewer.entities;
@@ -943,6 +954,7 @@ function Intersect_Keepout(PV_entities, keepout_points){
 
 
   var filtered_PV_entities = [];
+  var remove_PV_entities = [];
 
   for(var p=0; p < PV_entities.length; p++){
     var all_points_exclusive = false;
@@ -965,7 +977,76 @@ function Intersect_Keepout(PV_entities, keepout_points){
     }
   }
 
+  console.log("filtered_PV_entities")
   console.log(filtered_PV_entities.length)
+
+  for(p = 0; p < filtered_PV_entities.length; p++){
+    for(q = 0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
+      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+
+      for(var o = 0; o < keepout_points.length; o++){
+        if(longitude === parseFloat(keepout_points[o][0].toFixed(12)) && latitude === parseFloat(keepout_points[o][0].toFixed(12))){
+          if(!remove_PV_entities.includes(filtered_PV_entities[p])){
+            remove_PV_entities.push(filtered_PV_entities[p]);
+          }
+        }
+      }
+
+      var temp_lines_a_and_b = [];
+      for(o = 0; o < keepout_points.length; o++){
+        var temp_line = math_make_a_line(longitude, latitude, keepout_points[o][0],keepout_points[o][1]);
+        if(temp_lines_a_and_b.includes([temp_line[0],temp_line[1]])){
+          if(!remove_PV_entities.includes(filtered_PV_entities[p])){
+            remove_PV_entities.push(filtered_PV_entities[p]);
+          }
+        }
+        temp_lines_a_and_b.push([temp_line[0],temp_line[1]]);
+      }
+    }
+    //console.log("remove_PV_entities")
+    //console.log(remove_PV_entities.length)
+  }
+
+  var keepout_edges = [];
+
+  for(p = 0; p < keepout_points.length; p++){
+      if(p !== (keepout_points.length - 1)){
+          var base_line1 = math_make_a_line(keepout_points[p][0],keepout_points[p][1],keepout_points[p+1][0],keepout_points[p+1][1]);
+          keepout_edges.push(base_line1);
+      }
+      else{
+          var base_line2 = math_make_a_line(keepout_points[p][0],keepout_points[p][1],keepout_points[0][0],keepout_points[0][1]);
+          keepout_edges.push(base_line2);
+      }
+  }
+
+  for(p = 0; p < filtered_PV_entities.length; p++){
+    for(q = 0; q < 4; q++){
+      var longitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+      var temp_line = math_make_a_line(longitude,latitude,longitude-10,latitude);
+
+      var intersection_list = [];
+      for(o = 0; o <keepout_edges.length; o++){
+        var intersection_coordinate = lines_intersection_coordinates(temp_line,keepout_edges[o]);
+        if(intersection_coordinate !==undefined && !intersection_list.includes(intersection_coordinate)){
+          intersection_list.push(intersection_coordinate)
+        }
+      }
+      console.log("intersection_list")
+      console.log(intersection_list.length)
+      if(intersection_list.length % 2 === 1){
+        if(!remove_PV_entities.includes(filtered_PV_entities[p])){
+          remove_PV_entities.push(filtered_PV_entities[p]);
+        }
+      }
+
+    }
+    console.log("======================")
+  }
+  console.log("remove_PV_entities")
+  console.log(remove_PV_entities.length)
 }
 
 function Keepout_Delete_Panel(keepout_points){
