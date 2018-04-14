@@ -925,6 +925,8 @@ handler.setInputAction(function(movement){
 
 }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK, Cesium.KeyboardEventModifier.ALT);
 
+
+
 function Intersect_Keepout(PV_entities, keepout_points){
   console.log(PV_entities[0].polygon.hierarchy.getValue().length)
   console.log(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[0].polygon.hierarchy.getValue()[0]).longitude));
@@ -985,6 +987,60 @@ function Intersect_Keepout(PV_entities, keepout_points){
     }
   }
 
+  console.log("filtered_PV_entities")
+  console.log(filtered_PV_entities.length)
+  console.log("============================")
+
+  for(p = 0; p < PV_entities.length; p++){
+    for(q = 0; q < 4; q++){
+
+      var longitude1 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude1 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+
+      if(q !== 3){
+        var longitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q+1]).longitude).toFixed(12));
+        var latitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[q+1]).latitude).toFixed(12));
+        // keepout_edges.push(base_line1);
+      }
+      else{
+        var longitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[0]).longitude).toFixed(12));
+        var latitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(PV_entities[p].polygon.hierarchy.getValue()[0]).latitude).toFixed(12));
+        // keepout_edges.push(base_line2);
+      }
+
+      var temp_line = math_make_a_line(longitude1,latitude1,longitude2,latitude2);
+      var west_north_south_line = math_make_a_line(west,north,west,south);
+      var east_north_south_line = math_make_a_line(east,north,east,south);
+      var north_west_east_line = math_make_a_line(west,north,east,north);
+      var south_west_east_line = math_make_a_line(west,south,east,south);
+
+      // polylines.add({
+      //     positions : Cesium.Cartesian3.fromDegreesArray([longitude1,latitude1,longitude2,latitude2]),
+      //     width : 1,
+      // });
+      // viewer.scene.primitives.add(polylines);
+
+      var intersection_coordinate_1 = lines_intersection_coordinates_keepout(temp_line,west_north_south_line);
+      var intersection_coordinate_2 = lines_intersection_coordinates_keepout(temp_line,east_north_south_line);
+      var intersection_coordinate_3 = lines_intersection_coordinates_keepout(temp_line,north_west_east_line);
+      var intersection_coordinate_4 = lines_intersection_coordinates_keepout(temp_line,south_west_east_line);
+
+      if(intersection_coordinate_1 !==undefined || intersection_coordinate_2 !==undefined || intersection_coordinate_3 !==undefined || intersection_coordinate_4 !==undefined){
+        if(!filtered_PV_entities.includes(PV_entities[p])){
+          filtered_PV_entities.push(PV_entities[p])
+        }
+      }
+
+      // console.log("intersection_list")
+      // console.log(intersection_list.length)
+      //if(already_intersected === true){
+        //break;
+      //}
+
+    }
+    // console.log("======================")
+  }
+
   // for(var p = 0; p < filtered_PV_entities.length; p++){
   //   for(var q=0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
   //     polylines.add({
@@ -999,9 +1055,9 @@ function Intersect_Keepout(PV_entities, keepout_points){
   //   }
   // }
 
-  // console.log("filtered_PV_entities")
-  // console.log(filtered_PV_entities.length)
-  // console.log("============================")
+  console.log("filtered_PV_entities")
+  console.log(filtered_PV_entities.length)
+  console.log("============================")
 
   for(p = 0; p < filtered_PV_entities.length; p++){
     for(q = 0; q < filtered_PV_entities[p].polygon.hierarchy.getValue().length; q++){
@@ -1081,6 +1137,53 @@ function Intersect_Keepout(PV_entities, keepout_points){
   }
   // console.log("remove_PV_entities")
   // console.log(remove_PV_entities.length)
+  for(p = 0; p < filtered_PV_entities.length; p++){
+    for(q = 0; q < 4; q++){
+
+      var longitude1 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).longitude).toFixed(12));
+      var latitude1 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q]).latitude).toFixed(12));
+
+      if(q !== 3){
+        var longitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q+1]).longitude).toFixed(12));
+        var latitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[q+1]).latitude).toFixed(12));
+        // keepout_edges.push(base_line1);
+      }
+      else{
+        var longitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[0]).longitude).toFixed(12));
+        var latitude2 = parseFloat(Cesium.Math.toDegrees(Cesium.Cartographic.fromCartesian(filtered_PV_entities[p].polygon.hierarchy.getValue()[0]).latitude).toFixed(12));
+        // keepout_edges.push(base_line2);
+      }
+
+      var temp_line = math_make_a_line(longitude1,latitude1,longitude2,latitude2);
+
+      // polylines.add({
+      //     positions : Cesium.Cartesian3.fromDegreesArray([longitude1,latitude1,longitude2,latitude2]),
+      //     width : 1,
+      // });
+      // viewer.scene.primitives.add(polylines);
+
+      var already_intersected = false;
+      var intersection_list = [];
+      for(o = 0; o <keepout_edges.length; o++){
+        var intersection_coordinate = lines_intersection_coordinates_keepout(temp_line,keepout_edges[o]);
+        //console.log(intersection_coordinate)
+
+        if(intersection_coordinate !==undefined && !isNaN(intersection_coordinate[0]) && !isNaN(intersection_coordinate[1]) && !remove_PV_entities.includes(filtered_PV_entities[p])){
+          remove_PV_entities.push(filtered_PV_entities[p])
+          already_intersected = true;
+          //break;
+        }
+      }
+      //console.log("===============================")
+      // console.log("intersection_list")
+      // console.log(intersection_list.length)
+      //if(already_intersected === true){
+        //break;
+      //}
+
+    }
+    // console.log("======================")
+  }
 
   return remove_PV_entities;
 }
